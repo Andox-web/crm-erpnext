@@ -37,15 +37,16 @@
                                 <th>Partie</th>
                                 <th>Statut</th>
                                 <th class="text-end">Montant</th>
+                                <th class="text-end">Montant Restant</th>
                                 <th class="text-end">Actions</th>
                             </tr>
                         </thead>
                         <tbody>
-                            <tr th:each="invoice : ${invoices}" th:data-invoice-id="${invoice.id}" th:data-company="${invoice.company}">
-                                <td th:text="${invoice.number}"></td>
+                            <tr th:each="invoice : ${invoices}" th:data-invoice-id="${invoice.name}" th:data-company="${invoice.company}">
+                                <td th:text="${invoice.name}"></td>
                                 <td th:text="${#temporals.format(invoice.postingDate, 'dd/MM/yyyy')}"></td>
                                 <td th:text="${#temporals.format(invoice.dueDate, 'dd/MM/yyyy')}"></td>
-                                <td th:text="${invoice.partyName}"></td>
+                                <td th:text="${invoice.supplierName}"></td>
                                 <td>
                                     <span th:class="${invoice.status == 'Paid' ? 'badge bg-success' : 
                                         (invoice.status == 'Overdue' ? 'badge bg-danger' : 'badge bg-warning')}">
@@ -53,7 +54,9 @@
                                     </span>
                                 </td>
                                 <td class="text-end" 
-                                    th:text="${#numbers.formatDecimal(invoice.amount, 1, 2, 'COMMA') + ' ' + invoice.currency}"></td>
+                                    th:text="${#numbers.formatDecimal(invoice.grandTotal, 1, 2, 'COMMA') + ' ' + invoice.currency}"></td>
+                                <td class="text-end" 
+                                th:text="${#numbers.formatDecimal(invoice.outstandingAmount, 1, 2, 'COMMA') + ' ' + invoice.currency}"></td>
                                 <td class="text-end">
                                     <button class="btn btn-sm btn-outline-primary"
                                             data-bs-toggle="modal" 
@@ -61,10 +64,10 @@
                                         <i class="fas fa-eye"></i>
                                     </button>
                                     <button class="btn btn-sm btn-outline-success"
-                                            th:if="${invoice.status != 'Paid'}"
+                                            th:if="${invoice.status != 'Paid'&& invoice.status != 'Draft'}"
                                             data-bs-toggle="modal"
                                             data-bs-target="#paymentModal"
-                                            th:data-invoice-id="${invoice.id}">
+                                            th:data-invoice-id="${invoice.name}">
                                         <i class="fas fa-check-circle"></i>
                                     </button>
                                 </td>
@@ -155,7 +158,6 @@
 
                 modalElement.addEventListener('show.bs.modal', e => {
                     const invoiceId = e.relatedTarget.closest('tr').dataset.invoiceId;
-                    console.log(invoiceId);
                     fetch(`/purchase-invoices/${invoiceId}/items`)
                         .then(response => response.text())
                         .then(html => {
@@ -244,8 +246,8 @@
                     })
                     .then(response => response.json())
                     .then(data => {
+                        
                         if (data.success) {
-                            paymentModal.hide();
                             window.location.reload();
                         } else {
                             alert('Erreur lors du paiement: ' + (data.error || ''));

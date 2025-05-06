@@ -19,7 +19,6 @@
                                 <th>Type de Societe</th>
                                 <th>Email</th>
                                 <th>Téléphone</th>
-                                <th>Dernier devis</th>
                                 <th class="text-end">Actions</th>
                             </tr>
                         </thead>
@@ -27,14 +26,13 @@
                             <tr th:each="supplier : ${suppliers}">
                                 <td th:text="${supplier.supplierName}"></td>
                                 <td th:text="${supplier.supplierType}"></td>
-                                <td th:text="${supplier.email}"></td>
-                                <td th:text="${supplier.phone}"></td>
-                                <td th:text="${supplier.lastQuoteDate} ?: 'Aucun'"></td>
+                                <td th:text="${supplier.EmailId}"></td>
+                                <td th:text="${supplier.MobileNo}"></td>
                                 <!-- Colonne Actions -->
                                 <td class="text-end">
                                     <div class="btn-group" role="group">
                                         <!-- Bouton Demandes de devis -->
-                                        <a th:href="@{/suppliers/{id}/request-quotes(id=${supplier.id})}" 
+                                        <a th:href="@{/suppliers/{id}/request-quotes(id=${supplier.name})}" 
                                            class="btn btn-sm btn-outline-info"
                                            data-bs-toggle="tooltip" 
                                            title="Voir les demande de devis">
@@ -43,7 +41,7 @@
                                         </a>
                                         
                                         <!-- Bouton Commandes -->
-                                        <a th:href="@{/suppliers/{id}/orders(id=${supplier.id})}" 
+                                        <a th:href="@{/suppliers/{id}/orders(id=${supplier.name})}" 
                                            class="btn btn-sm btn-outline-primary"
                                            data-bs-toggle="tooltip" 
                                            title="Voir les commandes">

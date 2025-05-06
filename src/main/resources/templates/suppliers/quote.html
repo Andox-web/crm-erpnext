@@ -20,10 +20,10 @@
                         <span th:text="${statusFilter ?: 'Tous'}"></span>
                     </button>
                     <ul class="dropdown-menu dropdown-menu-end">
-                        <li><a class="dropdown-item" th:href="@{/suppliers/{id}/quotes(id=${supplier.id})}">Tous</a></li>
-                        <li><a class="dropdown-item" th:href="@{/suppliers/{id}/quotes(id=${supplier.id}, status='Draft')}">Brouillon</a></li>
-                        <li><a class="dropdown-item" th:href="@{/suppliers/{id}/quotes(id=${supplier.id}, status='Submitted')}">Soumis</a></li>
-                        <li><a class="dropdown-item" th:href="@{/suppliers/{id}/quotes(id=${supplier.id}, status='Cancelled')}">Annulé</a></li>
+                        <li><a class="dropdown-item" th:href="@{/suppliers/{id}/quotes(id=${supplier.name})}">Tous</a></li>
+                        <li><a class="dropdown-item" th:href="@{/suppliers/{id}/quotes(id=${supplier.name}, status='Draft')}">Brouillon</a></li>
+                        <li><a class="dropdown-item" th:href="@{/suppliers/{id}/quotes(id=${supplier.name}, status='Submitted')}">Soumis</a></li>
+                        <li><a class="dropdown-item" th:href="@{/suppliers/{id}/quotes(id=${supplier.name}, status='Cancelled')}">Annulé</a></li>
                     </ul>
                 </div>
             </div>
@@ -46,7 +46,7 @@
                         </thead>
                         <tbody>
                             <tr th:each="quote : ${quotes}">
-                                <td th:text="${quote.id}"></td>
+                                <td th:text="${quote.name}"></td>
                                 <td th:text="${#temporals.format(quote.transactionDate, 'dd/MM/yyyy')}"></td>
                                 <td th:text="${#temporals.format(quote.validTill, 'dd/MM/yyyy')}"></td>
                                 <td>
@@ -59,13 +59,13 @@
                                     [[${quote.status}]]
                                     </span>
                                 </td>
-                                <td class="text-end" th:text="${#numbers.formatDecimal(quote.amount, 1, 2, 'COMMA') + ' ' + quote.currency}"></td>
+                                <td class="text-end" th:text="${#numbers.formatDecimal(quote.grand_total, 1, 2, 'COMMA') + ' ' + quote.currency}"></td>
                                 <td class="text-end">
                                     <div class="btn-group" role="group">
                                         <button class="btn btn-sm btn-outline-secondary" 
                                                 data-bs-toggle="modal" 
                                                 data-bs-target="#editQuoteModal"
-                                                th:attr="data-quote-id=${quote.id}, data-quote-status=${quote.status}">
+                                                th:attr="data-quote-id=${quote.name}, data-quote-status=${quote.status}">
                                             <i class="fas fa-edit"></i>
                                         </button>
 
@@ -115,7 +115,7 @@
                 const editModal = document.getElementById('editQuoteModal');
                 const quoteItemsTableBody = document.querySelector('#quoteItemsTable tbody');
                 const savePricesBtn = document.getElementById('savePricesBtn');
-                const supplierId = /*[[${supplier.id}]]*/ '';
+                const supplierId = /*[[${supplier.name}]]*/ '';
         
                 editModal.addEventListener('show.bs.modal', function (event) {
                     const button = event.relatedTarget;

@@ -46,7 +46,7 @@
                         <tr th:each="rfq : ${rfqs}">
                             <td th:text="${rfq.name}"></td>
                             <td th:text="${rfq.company}"></td>
-                            <td th:text="${#temporals.format(rfq.transactionDate, 'dd/MM/yyyy')}"></td>
+                            <td th:text="${rfq.transactionDate}"></td>
                             <td>
                                 <span th:class="${'badge bg-' + 
                                     (rfq.status == 'Submitted' ? 'success' : 
@@ -90,7 +90,6 @@
                             <thead>
                                 <tr>
                                     <th>Article</th>
-                                    <th>Warehouse</th>
                                     <th>Quantité</th>
                                     <th>Unité</th>
                                 </tr>
@@ -120,7 +119,6 @@
                         tbody.innerHTML = items.map(item => `
                             <tr>
                                 <td>${item.itemCode}</td>
-                                <td>${item.description}</td>
                                 <td>${item.quantity}</td>
                                 <td>${item.uom}</td>
                             </tr>

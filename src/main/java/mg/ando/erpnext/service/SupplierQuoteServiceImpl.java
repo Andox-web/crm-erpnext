@@ -106,7 +106,7 @@ public class SupplierQuoteServiceImpl implements SupplierQuoteService{
             JsonNode.class
         );
         if (response.getStatusCode().is2xxSuccessful()&& response.hasBody()) {
-            return parseQuoteItems(response.getBody());
+            return parseQuoteItems(response.getBody().path("data"));
         }
         throw new RuntimeException("Une erreur a ete retenue");
     }
@@ -116,6 +116,8 @@ public class SupplierQuoteServiceImpl implements SupplierQuoteService{
 
         if (itemsNode.isArray()) {
             for (JsonNode item : itemsNode) {
+                System.out.println(item);
+            
                 items.add(QuoteItem.fromJson(item));
             }
         }

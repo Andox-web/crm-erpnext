@@ -49,7 +49,7 @@ public class SupplierRfqServiceImpl implements SupplierRfqService {
     public List<RfqItem> getRfqItems(String rfqId) {
         try {
             String url = ERP_BASE_URL + "/api/resource/Request for Quotation/" 
-                       + URLEncoder.encode(rfqId, StandardCharsets.UTF_8);
+                       + rfqId;
             
             JsonNode response = restTemplate.exchange(
                 url, 
@@ -72,14 +72,8 @@ public class SupplierRfqServiceImpl implements SupplierRfqService {
         if (status != null) {
             filters.add("[\"status\",\"=\",\"" + status + "\"]");
         }
-
-        return UriComponentsBuilder
-            .fromHttpUrl(ERP_BASE_URL + "/api/resource/Request for Quotation")
-            .queryParam("fields", "[\"name\",\"transaction_date\",\"status\",\"company\"]")
-            .queryParam("filters", filters.toString())
-            .queryParam("apply_filters", 1)
-            .encode()
-            .toUriString();
+        String url =ERP_BASE_URL + "/api/resource/Request for Quotation?fields=[\"name\",\"transaction_date\",\"status\",\"company\"]&filters="+filters.toString()+"&apply_filters=1";
+        return url;
     }
 
     private List<Rfq> parseRfqList(JsonNode response) {

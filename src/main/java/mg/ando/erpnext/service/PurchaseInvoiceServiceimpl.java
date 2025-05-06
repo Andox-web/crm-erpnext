@@ -3,6 +3,7 @@ package mg.ando.erpnext.service;
 import com.fasterxml.jackson.databind.JsonNode;
 import mg.ando.erpnext.dto.Invoice;
 import mg.ando.erpnext.dto.InvoiceItem;
+import mg.ando.erpnext.dto.PaymentData;
 import mg.ando.erpnext.util.Util;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,8 +15,10 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.util.UriComponentsBuilder;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
@@ -40,13 +43,14 @@ public class PurchaseInvoiceServiceimpl implements PurchaseInvoiceService {
         return parseInvoiceItems(response.path("data"));
     }
 
-    public JsonNode createPayment(String invoiceId, Map<String, Object> paymentData) {
+    public JsonNode createPayment(String invoiceId, PaymentData paymentData) {
         JsonNode invoice = fetchInvoiceDetails(invoiceId);
         Map<String, Object> paymentEntry = buildPaymentEntry(invoiceId, paymentData, invoice);
         
-        ResponseEntity<JsonNode> response = restTemplate.postForEntity(
+        ResponseEntity<JsonNode> response = restTemplate.exchange(
             ERP_BASE_URL + "/api/resource/Payment Entry",
-            Util.createErpRequest(),
+            HttpMethod.POST,
+            Util.createErpRequestWithBody(paymentEntry),
             JsonNode.class
         );
         
@@ -56,17 +60,12 @@ public class PurchaseInvoiceServiceimpl implements PurchaseInvoiceService {
 
     private String buildInvoiceUrl(String status) {
         List<String> filters = new ArrayList<>();
-        filters.add("[\"docstatus\",\"=\",1]");
         
         if (status != null) {
             filters.add("[\"status\",\"=\",\"" + status + "\"]");
         }
 
-        return UriComponentsBuilder.fromHttpUrl(ERP_BASE_URL + "/api/resource/Purchase Invoice")
-            .queryParam("fields", "[\"name\",\"posting_date\",\"due_date\",\"status\",\"grand_total\",\"currency\",\"supplier\",\"supplier_name\",\"company\"]")
-            .queryParam("filters", filters.toString())
-            .encode()
-            .toUriString();
+        return ERP_BASE_URL + "/api/resource/Purchase Invoice?fields=[\"name\",\"posting_date\",\"due_date\",\"status\",\"grand_total\",\"currency\",\"supplier\",\"supplier_name\",\"company\",\"outstanding_amount\"]&filters="+filters.toString();
     }
 
     private List<Invoice> parseInvoiceList(JsonNode response) {
@@ -101,42 +100,47 @@ public class PurchaseInvoiceServiceimpl implements PurchaseInvoiceService {
         return invoiceItem;
     }
 
-    private Map<String, Object> buildPaymentEntry(String invoiceId, Map<String, Object> paymentData, JsonNode invoice) {
-        Map<String, Object> entry = new java.util.HashMap<>();
+    private Map<String, Object> buildPaymentEntry(String invoiceId, PaymentData data,JsonNode invoice) {
+        Map<String, Object> entry = new HashMap<>();
         
+        // Récupérer les valeurs depuis la facture si elles ne sont pas fournies dans le DTO
+        String supplier = data.getSupplier() != null ? data.getSupplier() : invoice.get("supplier").asText();
+        BigDecimal amount = data.getAmount() != null ? data.getAmount() : new BigDecimal(invoice.get("outstanding_amount").asText());
+        String currency = data.getCurrency() != null ? data.getCurrency() : invoice.get("currency").asText();
+    
         entry.put("doctype", "Payment Entry");
         entry.put("payment_type", "Pay");
-        entry.put("company", invoice.path("company").asText());
-        entry.put("posting_date", java.time.LocalDate.now().toString());
-        
+        entry.put("company", invoice.get("company").asText()); // Récupéré depuis la facture
+        entry.put("posting_date", LocalDate.now().toString());
+    
         entry.put("party_type", "Supplier");
-        entry.put("party", paymentData.getOrDefault("supplier", invoice.path("supplier").asText()));
-        
-        entry.put("paid_from", paymentData.getOrDefault("paidFrom", "Cash - H"));
-        entry.put("paid_to", paymentData.getOrDefault("paidTo", "Creditors - H"));
-        
-        BigDecimal amount = getPaymentAmount(paymentData, invoice);
+        entry.put("party", supplier);
+    
+        // Comptes (tu peux aussi les récupérer dynamiquement si tu veux plus de souplesse)
+        entry.put("paid_from", data.getPaidFrom() != null ? data.getPaidFrom() : "Cash - H");
+        entry.put("paid_to", data.getPaidTo() != null ? data.getPaidTo() : "Creditors - H");
+    
         entry.put("paid_amount", amount);
-        
-        Map<String, Object> reference = Map.of(
-            "reference_doctype", "Purchase Invoice",
-            "reference_name", invoiceId,
-            "allocated_amount", amount
-        );
-        
-        entry.put("references", Collections.singletonList(reference));
-        
-        if (paymentData.containsKey("exchangeRate")) {
-            entry.put("source_exchange_rate", paymentData.get("exchangeRate"));
-            entry.put("payment_currency", paymentData.getOrDefault("currency", invoice.path("currency").asText()));
+        entry.put("received_amount", data.getExchangeRate() != null ? amount.multiply(data.getExchangeRate()) : amount);
+    
+        // Références
+        Map<String, Object> reference = new HashMap<>();
+        reference.put("reference_doctype", "Purchase Invoice");
+        reference.put("reference_name", invoiceId);
+        reference.put("allocated_amount", amount);
+        entry.put("references", List.of(reference));
+    
+        if (data.getExchangeRate() != null) {
+            entry.put("source_exchange_rate", data.getExchangeRate());
+            entry.put("payment_currency", currency);
         }
-        
+    
         return entry;
     }
 
     private BigDecimal getPaymentAmount(Map<String, Object> paymentData, JsonNode invoice) {
         return paymentData.containsKey("amount") 
-            ? (BigDecimal) paymentData.get("amount") 
+            ? new BigDecimal(paymentData.get("amount").toString()) 
             : new BigDecimal(invoice.path("outstanding_amount").asText());
     }
 

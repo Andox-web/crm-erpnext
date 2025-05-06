@@ -75,7 +75,8 @@ public class SupplierOrderServiceImpl implements SupplierOrderService{
             JsonNode.class
         );
         if (response.getStatusCode().is2xxSuccessful()&& response.hasBody()) {
-            return parseOrderItem(response.getBody());
+            
+            return parseOrderItem(response.getBody().path("data"));
         }
         throw new RuntimeException("Une erreur a ete retenue");
     }
@@ -85,6 +86,7 @@ public class SupplierOrderServiceImpl implements SupplierOrderService{
 
         if (itemsNode.isArray()) {
             for (JsonNode item : itemsNode) {
+            
                 items.add(OrderItem.fromJson(item));
             }
         }

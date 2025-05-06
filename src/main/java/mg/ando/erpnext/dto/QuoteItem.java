@@ -6,10 +6,8 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import com.fasterxml.jackson.databind.JsonNode;
 
 public class QuoteItem {
-    @JsonProperty("item_code")
     private String itemCode;
 
-    @JsonProperty("item_name")
     private String itemName;
     private String name;
     private BigDecimal qty;
@@ -19,7 +17,7 @@ public class QuoteItem {
         QuoteItem quoteItem = new QuoteItem();
         quoteItem.setAmount(jsonNode.get("amount").decimalValue());
         quoteItem.setItemCode(jsonNode.get("item_code").asText());
-        quoteItem.setItemName(jsonNode.get("iten_name").asText());
+        quoteItem.setItemName(jsonNode.get("item_name").asText());
         quoteItem.setName(jsonNode.get("name").asText());
         quoteItem.setQty(jsonNode.get("qty").decimalValue());
         quoteItem.setRate(jsonNode.get("rate").decimalValue());

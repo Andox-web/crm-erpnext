@@ -2,6 +2,7 @@ package mg.ando.erpnext.controller.invoices;
 
 import mg.ando.erpnext.dto.Invoice;
 import mg.ando.erpnext.dto.InvoiceItem;
+import mg.ando.erpnext.dto.PaymentData;
 import mg.ando.erpnext.service.PurchaseInvoiceService;
 import mg.ando.erpnext.auth.annotation.RequireERPAuth;
 import org.springframework.http.ResponseEntity;
@@ -50,22 +51,26 @@ public class PurchaseInvoiceController {
     @ResponseBody
     public ResponseEntity<?> createPayment(
         @PathVariable String invoiceId,
-        @RequestBody Map<String, Object> paymentData
+        @RequestBody PaymentData paymentData
     ) {
         try {
             validatePaymentData(paymentData);
-            JsonNode response = invoiceService.createPayment(invoiceId, paymentData);
-            return ResponseEntity.ok(response);
+            invoiceService.createPayment(invoiceId, paymentData);
+            Map<String, Object> paymentResponse = Map.of(
+                "success", true
+            );
+            return ResponseEntity.ok(paymentResponse);
         } catch (IllegalArgumentException e) {
             return ResponseEntity.badRequest().body(Map.of("error", e.getMessage()));
         } catch (Exception e) {
+            e.printStackTrace();
             return ResponseEntity.internalServerError()
                 .body(Map.of("error", "Erreur de traitement: " + e.getMessage()));
         }
     }
 
-    private void validatePaymentData(Map<String, Object> paymentData) {
-        if (!paymentData.containsKey("modeOfPayment")) {
+    private void validatePaymentData(PaymentData paymentData) {
+        if (paymentData.getModeOfPayment()== null) {
             throw new IllegalArgumentException("Le mode de paiement est requis");
         }
     }

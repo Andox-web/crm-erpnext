@@ -14,6 +14,7 @@ public class Invoice {
     private String currency;
     private String supplier;
     private String supplierName;
+    private BigDecimal outstandingAmount;
     private String company;
 
     public static Invoice fromJson(JsonNode node) {
@@ -26,6 +27,7 @@ public class Invoice {
         invoice.setCurrency(getText(node, "currency"));
         invoice.setSupplier(getText(node, "supplier"));
         invoice.setSupplierName(getText(node, "supplier_name"));
+        invoice.setOutstandingAmount(node.get("outstanding_amount").decimalValue());
         invoice.setCompany(getText(node, "company"));
         return invoice;
     }
@@ -114,6 +116,14 @@ public class Invoice {
 
     public void setCompany(String company) {
         this.company = company;
+    }
+
+    public BigDecimal getOutstandingAmount() {
+        return outstandingAmount;
+    }
+
+    public void setOutstandingAmount(BigDecimal outstandingAmount) {
+        this.outstandingAmount = outstandingAmount;
     }
     
 }
