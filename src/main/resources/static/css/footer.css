@@ -1,0 +1,6 @@
+.main-footer {
+    background-color: #e0e0e0;
+    padding: 15px;
+    text-align: center;
+    grid-column: 1 / -1;
+}

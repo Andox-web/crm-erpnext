@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{base}">
+<head>
+    <title>Gestion des Fournisseurs</title>
+</head>
+<body>
+    <div layout:fragment="content" class="content">
+        <div class="d-flex justify-content-between mb-4">
+            <h2><i class="fas fa-truck-loading me-2"></i>Fournisseurs</h2>
+        </div>
+
+        <div class="card shadow-sm">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover" id="suppliersTable">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nom</th>
+                                <th>Type de Societe</th>
+                                <th>Email</th>
+                                <th>Téléphone</th>
+                                <th>Dernier devis</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="supplier : ${suppliers}">
+                                <td th:text="${supplier.supplierName}"></td>
+                                <td th:text="${supplier.supplierType}"></td>
+                                <td th:text="${supplier.email}"></td>
+                                <td th:text="${supplier.phone}"></td>
+                                <td th:text="${supplier.lastQuoteDate} ?: 'Aucun'"></td>
+                                <!-- Colonne Actions -->
+                                <td class="text-end">
+                                    <div class="btn-group" role="group">
+                                        <!-- Bouton Demandes de devis -->
+                                        <a th:href="@{/suppliers/{id}/request-quotes(id=${supplier.id})}" 
+                                           class="btn btn-sm btn-outline-info"
+                                           data-bs-toggle="tooltip" 
+                                           title="Voir les demande de devis">
+                                            <i class="fas fa-file-invoice me-1"></i>
+                                            <span class="d-none d-md-inline">Demande de Devis</span>
+                                        </a>
+                                        
+                                        <!-- Bouton Commandes -->
+                                        <a th:href="@{/suppliers/{id}/orders(id=${supplier.id})}" 
+                                           class="btn btn-sm btn-outline-primary"
+                                           data-bs-toggle="tooltip" 
+                                           title="Voir les commandes">
+                                            <i class="fas fa-shopping-cart me-1"></i>
+                                            <span class="d-none d-md-inline">Commandes</span>
+                                        </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+    </div>
+</body>
+</html>

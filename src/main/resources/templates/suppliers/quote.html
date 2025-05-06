@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{base}">
+<head>
+    <title>Devis Fournisseur</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <!-- En-tête -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="fas fa-file-invoice me-2"></i>
+                Devis fournisseur: <span th:text="${supplier.supplierName}"></span>
+            </h2>
+            
+            <div class="btn-group">
+                <div class="btn-group">
+                    <button type="button" class="btn btn-outline-secondary dropdown-toggle" 
+                            data-bs-toggle="dropdown" aria-expanded="false">
+                        <i class="fas fa-filter me-2"></i>
+                        <span th:text="${statusFilter ?: 'Tous'}"></span>
+                    </button>
+                    <ul class="dropdown-menu dropdown-menu-end">
+                        <li><a class="dropdown-item" th:href="@{/suppliers/{id}/quotes(id=${supplier.id})}">Tous</a></li>
+                        <li><a class="dropdown-item" th:href="@{/suppliers/{id}/quotes(id=${supplier.id}, status='Draft')}">Brouillon</a></li>
+                        <li><a class="dropdown-item" th:href="@{/suppliers/{id}/quotes(id=${supplier.id}, status='Submitted')}">Soumis</a></li>
+                        <li><a class="dropdown-item" th:href="@{/suppliers/{id}/quotes(id=${supplier.id}, status='Cancelled')}">Annulé</a></li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+        <!-- Tableau des devis -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Référence</th>
+                                <th>Date</th>
+                                <th>Validité</th>
+                                <th>Statut</th>
+                                <th class="text-end">Montant</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="quote : ${quotes}">
+                                <td th:text="${quote.id}"></td>
+                                <td th:text="${#temporals.format(quote.transactionDate, 'dd/MM/yyyy')}"></td>
+                                <td th:text="${#temporals.format(quote.validTill, 'dd/MM/yyyy')}"></td>
+                                <td>
+                                    <!-- Ligne corrigée (ancienne ligne 58) -->
+                                    <span th:class="${quote.status == 'Submitted'} 
+                                    ? 'badge bg-success' 
+                                    : (${quote.status == 'Draft'} 
+                                        ? 'badge bg-warning text-dark' 
+                                        : 'badge bg-secondary')">
+                                    [[${quote.status}]]
+                                    </span>
+                                </td>
+                                <td class="text-end" th:text="${#numbers.formatDecimal(quote.amount, 1, 2, 'COMMA') + ' ' + quote.currency}"></td>
+                                <td class="text-end">
+                                    <div class="btn-group" role="group">
+                                        <button class="btn btn-sm btn-outline-secondary" 
+                                                data-bs-toggle="modal" 
+                                                data-bs-target="#editQuoteModal"
+                                                th:attr="data-quote-id=${quote.id}, data-quote-status=${quote.status}">
+                                            <i class="fas fa-edit"></i>
+                                        </button>
+
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Modal de modification de prix -->
+        <div class="modal fade" id="editQuoteModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Modifier les prix</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <table class="table" id="quoteItemsTable">
+                            <thead>
+                                <tr>
+                                    <th>Article</th>
+                                    <th>Code</th>
+                                    <th>Quantité</th>
+                                    <th>Prix unitaire</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Rempli dynamiquement par JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer" id="modalFooter">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Annuler</button>
+                        <button type="button" class="btn btn-primary" id="savePricesBtn">Enregistrer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <!-- JavaScript spécifique à la page -->
+        <script th:inline="javascript">
+            document.addEventListener('DOMContentLoaded', function () {
+                const editModal = document.getElementById('editQuoteModal');
+                const quoteItemsTableBody = document.querySelector('#quoteItemsTable tbody');
+                const savePricesBtn = document.getElementById('savePricesBtn');
+                const supplierId = /*[[${supplier.id}]]*/ '';
+        
+                editModal.addEventListener('show.bs.modal', function (event) {
+                    const button = event.relatedTarget;
+                    const quoteId = button.getAttribute('data-quote-id');
+                    const quoteStatus = button.getAttribute('data-quote-status');
+                    editModal.setAttribute('data-quote-id', quoteId);
+
+                    fetch(`/suppliers/${supplierId}/quotes/${quoteId}/items`)
+                    .then(response => response.json())
+                    .then(items => {
+                        quoteItemsTableBody.innerHTML = '';
+                        items.forEach(item => {
+                            const row = document.createElement('tr');
+                            row.setAttribute('data-item-id', item.name);
+
+                            // Déterminer si l'input doit être en lecture seule
+                            const isReadOnly = quoteStatus !== 'Draft' ? 'readonly' : '';
+                            if(isReadOnly) {
+                                document.querySelector('#modalFooter').style.display = 'none';
+                            }
+                            row.innerHTML = `
+                                <td>${item.item_name}</td>
+                                <td>${item.item_code}</td>
+                                <td>${item.qty}</td>
+                                <td>
+                                    <input type="number" class="form-control price-input" 
+                                        value="${item.rate}" step="0.01" min="0" ${isReadOnly}>
+                                </td>
+                                <td class="item-total">${item.amount.toFixed(2)}</td>
+                            `;
+                            quoteItemsTableBody.appendChild(row);
+                        });
+
+                        if (quoteStatus === 'Draft') {
+                            document.querySelectorAll('.price-input').forEach(input => {
+                                input.addEventListener('input', function () {
+                                    const row = this.closest('tr');
+                                    const qty = parseFloat(row.children[2].textContent);
+                                    const price = parseFloat(this.value);
+                                    const totalCell = row.querySelector('.item-total');
+                                    totalCell.textContent = (qty * price).toFixed(2);
+                                });
+                            });
+                        }
+                    });
+                });
+
+        
+                savePricesBtn.addEventListener('click', function () {
+                    const quoteId = editModal.getAttribute('data-quote-id');
+                    const updates = Array.from(quoteItemsTableBody.querySelectorAll('tr'))
+                        .map(row => ({
+                            name: row.getAttribute('data-item-id'),
+                            rate: parseFloat(row.querySelector('.price-input').value)
+                        }));
+                    
+                    fetch(`/suppliers/${supplierId}/quotes/${quoteId}/update-price`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify(updates)
+                    })
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.success) {
+                            window.location.reload();
+                        } else {
+                            alert('Erreur lors de la mise à jour');
+                        }
+                    });
+                });
+            });
+        </script>
+            
+    </div>
+
+    
+</body>
+</html>

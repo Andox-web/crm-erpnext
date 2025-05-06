@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout" layout:decorate="~{base}">
+<head>
+    <title>Commandes Fournisseur</title>
+</head>
+<body>
+    <div layout:fragment="content">
+        <!-- En-tête -->
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2>
+                <i class="fas fa-shopping-cart me-2"></i>
+                Commandes fournisseur: <span th:text="${supplier.supplierName}"></span>
+            </h2>
+            
+            <div class="btn-group">
+                <a th:href="@{/suppliers/{id}/quotes(id=${supplier.id})}" 
+                   class="btn btn-outline-secondary">
+                    <i class="fas fa-file-invoice me-2"></i>Voir les devis
+                </a>
+            </div>
+        </div>
+
+        <!-- Tableau des commandes -->
+        <div class="card shadow-sm mb-4">
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Référence</th>
+                                <th>Date</th>
+                                <th>Statut</th>
+                                <th class="text-end">Montant</th>
+                                <th class="text-end">Actions</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr th:each="order : ${orders}" th:data-order-id="${order.orderNumber}">
+                                <td th:text="${order.orderNumber}"></td>
+                                <td th:text="${#temporals.format(order.orderDate, 'dd/MM/yyyy')}"></td>
+                                <td>
+                                    <span th:class="${order.status == 'Received'} ? 'badge bg-primary' : 
+                                              (${order.status == 'Completed'} ? 'badge bg-success' : 
+                                              'badge bg-secondary')">
+                                        [[${order.status}]]
+                                    </span>
+                                </td>
+                                <td class="text-end" th:text="${#numbers.formatDecimal(order.totalAmount, 1, 2, 'COMMA') + ' ' + order.currency}"></td>
+                                <td class="text-end">
+                                    <div class="btn-group" role="group">
+                                        <a class="btn btn-sm btn-outline-primary"
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#viewOrderModal"
+                                            th:attr="data-order-id=${order.orderNumber}">
+                                                <i class="fas fa-eye"></i>
+                                            </a>
+                                    </div>
+                                </td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <!-- Ajouter ce modal pour l'affichage des articles -->
+        <div class="modal fade" id="viewOrderModal" tabindex="-1" aria-hidden="true">
+            <div class="modal-dialog modal-lg">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title">Détails de la commande</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                    <div class="modal-body">
+                        <table class="table" id="orderItemsTable">
+                            <thead>
+                                <tr>
+                                    <th>Article</th>
+                                    <th>Code</th>
+                                    <th>Quantité</th>
+                                    <th>Prix unitaire</th>
+                                    <th>Total</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <!-- Rempli dynamiquement par JavaScript -->
+                            </tbody>
+                        </table>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Fermer</button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <script th:inline="javascript">
+            document.addEventListener('DOMContentLoaded', function() {
+            // Gestion de l'affichage des articles
+            const viewOrderModal = document.getElementById('viewOrderModal');
+            if (viewOrderModal) {
+                viewOrderModal.addEventListener('show.bs.modal', function(event) {
+                    const button = event.relatedTarget;
+                    const tr = button.closest('tr');
+                    const orderId = tr.dataset.orderId;
+                    const supplierId = /*[[${supplier.id}]]*/ '';
+
+                    fetch(`/suppliers/${supplierId}/orders/${orderId}/items`)
+                        .then(handleResponse)
+                        .then(items => populateItemsTable(items))
+                        .catch(handleFetchError);
+                });
+            }
+
+            // Fonctions utilitaires
+            function handleResponse(response) {
+                if (!response.ok) throw new Error('Erreur réseau');
+                return response.json();
+            }
+
+            function populateItemsTable(items) {
+                const tbody = document.querySelector('#orderItemsTable tbody');
+                tbody.innerHTML = '';
+
+                const fragment = document.createDocumentFragment();
+                
+                items.forEach(item => {
+                    const tr = document.createElement('tr');
+                    tr.innerHTML = `
+                        <td>${item.item_name}</td>
+                        <td>${item.item_code}</td>
+                        <td>${item.qty}</td>
+                        <td>${item.rate}</td>
+                        <td>${item.amount}</td>
+                    `;
+                    fragment.appendChild(tr);
+                });
+
+                tbody.appendChild(fragment);
+            }
+
+            function showSuccessAndReload(message) {
+                Swal.fire({
+                    title: 'Succès!',
+                    text: message,
+                    icon: 'success',
+                    willClose: () => window.location.reload()
+                });
+            }
+
+            function showError(message) {
+                Swal.fire('Erreur!', message, 'error');
+            }
+
+            function handleFetchError(error) {
+                console.error('Erreur:', error);
+                const tbody = document.querySelector('#orderItemsTable tbody');
+                tbody.innerHTML = '<tr><td colspan="5" class="text-danger">Erreur de chargement</td></tr>';
+                Swal.fire('Erreur', 'Une erreur est survenue', 'error');
+            }
+        });
+            document.addEventListener('DOMContentLoaded', function() {
+                // Activation des tooltips Bootstrap
+                const tooltipTriggerList = document.querySelectorAll('[data-bs-toggle="tooltip"]')
+                const tooltipList = [...tooltipTriggerList].map(tooltipTriggerEl => new bootstrap.Tooltip(tooltipTriggerEl))
+            });
+        </script>
+    </div>
+
+    
+</body>
+</html>

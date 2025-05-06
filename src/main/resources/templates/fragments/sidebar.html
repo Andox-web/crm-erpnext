@@ -1,0 +1,67 @@
+<html xmlns:th="http://www.thymeleaf.org">
+<body>
+    <aside th:fragment="sidebar" class="main-sidebar" id="sidebar">
+        <button class="toggle-btn" onclick="toggleSidebar()">
+            <i class="fas fa-chevron-left"></i>
+        </button>
+        
+        <nav class="sidebar-nav">
+            <ul>
+                <li>
+                    <a th:href="@{/suppliers}" class="nav-link">
+                        <i class="fas fa-truck-loading icon"></i>
+                        <span class="nav-text">Fournisseur</span>
+                    </a>
+                    <a th:href="@{/purchase-invoices}" class="nav-link">
+                        <i class="fas fa-file-invoice icon"></i>
+                        <span class="nav-text">Facture</span>
+                    </a>
+                </li>
+                
+            </ul>
+        </nav>
+        
+    <script>
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const content = document.querySelector('.content');
+            const isCollapsing = !sidebar.classList.contains('collapsed');
+            
+            if(isCollapsing) {
+                setTimeout(() => sidebar.classList.add('collapsed'), 10);
+                document.querySelector('.toggle-btn i').className = 'fas fa-chevron-right';
+            } else {
+                document.querySelector('.toggle-btn i').className = 'fas fa-chevron-down';
+                sidebar.classList.remove('collapsed');
+            }
+
+            // Animation de synchronisation
+            setTimeout(() => {
+                content.style.transition = 'margin-left 0.3s ease';
+                content.style.marginLeft = isCollapsing ? 
+                    `1px` : 
+                    `1px`;
+            }, 50);
+
+            // Persistance de l'état
+            localStorage.setItem('sidebarCollapsed', isCollapsing);
+        }
+
+        // Initialisation
+        document.addEventListener('DOMContentLoaded', () => {
+            const sidebar = document.getElementById('sidebar');
+            const isCollapsed = localStorage.getItem('sidebarCollapsed') === 'true';
+            
+            if(isCollapsed) {
+                sidebar.classList.add('collapsed');
+                document.querySelector('.toggle-btn i').className = 'fas fa-chevron-right';
+            }else{
+                document.querySelector('.toggle-btn i').className = 'fas fa-chevron-down';
+                sidebar.classList.remove('collapsed');
+            }
+        });
+    </script>
+    </aside>
+
+</body>
+</html>

@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <header th:fragment="header" class="main-header">
+        <nav class="header-nav">
+            <div class="logo-container">
+                <div class="logo">ERPNEXT</div>
+            </div>
+            
+            <ul class="nav-links">
+                <li><a href="#" class="nav-link"><i class="fas fa-home icon-sm"></i>Home</a></li>
+                <li><a href="#" class="nav-link"><i class="fas fa-info-circle icon-sm"></i>About</a></li>
+                <li><a href="#" class="nav-link"><i class="fas fa-envelope icon-sm"></i>Contact</a></li>
+            </ul>
+            
+            <div class="user-dropdown dropdown">
+                <button class="btn btn-link user-btn dropdown-toggle" 
+                        type="button" 
+                        data-bs-toggle="dropdown" 
+                        aria-expanded="false">
+                    <i class="fas fa-user-circle user-icon"></i>
+                    <span class="username">John Doe</span>
+                    <i class="fas fa-chevron-down arrow"></i>
+                </button>
+                <ul class="dropdown-menu dropdown-menu-end">
+                    <li><a class="dropdown-item" href="#"><i class="fas fa-user-cog me-2"></i>Profile</a></li>
+                    <li><a class="dropdown-item" href="#"><i class="fas fa-sign-out-alt me-2"></i>Logout</a></li>
+                </ul>
+            </div>
+        </nav>
+        <script>
+            // custom.js
+            document.querySelectorAll('.dropdown').forEach(dropdown => {
+                dropdown.addEventListener('show.bs.dropdown', function() {
+                    this.querySelector('.dropdown-menu').classList.add('show');
+                    this.querySelector('.arrow').style.transform = 'rotate(180deg)';
+                });
+                
+                dropdown.addEventListener('hide.bs.dropdown', function() {
+                    this.querySelector('.dropdown-menu').classList.remove('show');
+                    this.querySelector('.arrow').style.transform = 'rotate(0deg)';
+                });
+            });
+        </script>
+        
+    </header>
+</body>
+</html>

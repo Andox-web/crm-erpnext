@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{base}">
+<head>
+    <title>Demandes de Devis</title>
+</head>
+<body>
+
+<div layout:fragment="content" class="container-fluid">
+    <div class="card shadow mb-4">
+        <div class="card-header d-flex justify-content-between align-items-center">
+            <h5 class="m-0 font-weight-bold text-primary">
+                Demandes de devis pour le fournisseur
+            </h5>
+            <div class="btn-group">
+                <button class="btn btn-outline-secondary dropdown-toggle" 
+                        type="button" 
+                        data-bs-toggle="dropdown">
+                    Statut: [[${statusFilter ?: 'Tous'}]]
+                </button>
+                <ul class="dropdown-menu">
+                    <li><a class="dropdown-item" 
+                           th:href="@{/suppliers/{id}/request-quotes(id=${supplierId})}">Tous</a></li>
+                    <li><a class="dropdown-item" 
+                           th:href="@{/suppliers/{id}/request-quotes(id=${supplierId}, status='Draft')}">Brouillon</a></li>
+                    <li><a class="dropdown-item" 
+                           th:href="@{/suppliers/{id}/request-quotes(id=${supplierId}, status='Submitted')}">Soumis</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>N° RFQ</th>
+                            <th>Company</th>
+                            <th>Date de transaction</th>
+                            <th>Status</th>
+                            <th class="text-end">Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="rfq : ${rfqs}">
+                            <td th:text="${rfq.name}"></td>
+                            <td th:text="${rfq.company}"></td>
+                            <td th:text="${#temporals.format(rfq.transactionDate, 'dd/MM/yyyy')}"></td>
+                            <td>
+                                <span th:class="${'badge bg-' + 
+                                    (rfq.status == 'Submitted' ? 'success' : 
+                                     rfq.status == 'Draft' ? 'warning' : 'secondary')}">
+                                    [[${rfq.status}]]
+                                </span>
+                            </td>
+                            <td class="text-end">
+                                <button class="btn btn-sm btn-outline-info"
+                                        data-bs-toggle="modal" 
+                                        data-bs-target="#rfqModal"
+                                        th:data-rfq-id="${rfq.name}">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <a th:href="@{/suppliers/{id}/quotes/{rfqId}/list(id=${supplierId}, rfqId=${rfq.name})}" 
+                                    class="btn btn-sm btn-outline-info"
+                                    data-bs-toggle="tooltip" 
+                                    title="Voir les devis">
+                                    <i class="fas fa-file-invoice me-1"></i>
+                                    <span class="d-none d-md-inline">Devis</span>
+                                </a>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal Détails RFQ -->
+    <div class="modal fade" id="rfqModal" tabindex="-1">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Détails de la demande de devis</h5>
+                    <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                </div>
+                <div class="modal-body">
+                    <div class="table-responsive">
+                        <table class="table table-sm">
+                            <thead>
+                                <tr>
+                                    <th>Article</th>
+                                    <th>Warehouse</th>
+                                    <th>Quantité</th>
+                                    <th>Unité</th>
+                                </tr>
+                            </thead>
+                            <tbody id="rfqItems">
+                                <!-- Les articles seront chargés ici -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script th:inline="javascript">
+        document.addEventListener('DOMContentLoaded', function() {
+            const rfqModal = document.getElementById('rfqModal');
+            
+            rfqModal.addEventListener('show.bs.modal', function(event) {
+                const button = event.relatedTarget;
+                const rfqId = button.getAttribute('data-rfq-id');
+                
+                fetch(`/suppliers/rfqs/${rfqId}/items`)
+                    .then(response => response.json())
+                    .then(items => {
+                        const tbody = document.getElementById('rfqItems');
+                        tbody.innerHTML = items.map(item => `
+                            <tr>
+                                <td>${item.itemCode}</td>
+                                <td>${item.description}</td>
+                                <td>${item.quantity}</td>
+                                <td>${item.uom}</td>
+                            </tr>
+                        `).join('');
+                    })
+                    .catch(error => console.error('Erreur:', error));
+            });
+        });
+    </script>
+</div>
+
+</body>
+</html>
