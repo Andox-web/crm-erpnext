@@ -31,10 +31,18 @@ public class ERPAuthInterceptor implements HandlerInterceptor {
 
             // Vérifie le cookie
             String sid = null;
+            int count = 0;
             if (request.getCookies() != null) {
                 for (Cookie cookie : request.getCookies()) {
                     if ("ERP_SESSION".equals(cookie.getName())) {
                         sid = cookie.getValue();
+                        count++;
+                    }
+                    else if ("user".equals(cookie.getName())) {
+                        request.setAttribute("user", cookie.getValue());
+                        count++;
+                    }
+                    if (count == 2) {
                         break;
                     }
                 }

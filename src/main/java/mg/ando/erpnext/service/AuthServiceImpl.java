@@ -1,6 +1,8 @@
 package mg.ando.erpnext.service;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.*;
 import org.springframework.stereotype.Service;
@@ -20,6 +22,7 @@ public class AuthServiceImpl implements AuthService{
     @Value("${erp.login-url}")
     private String erpLoginUrl;
 
+    @Autowired
     private RestTemplate restTemplate;
     private ObjectMapper objectMapper;
 
@@ -97,6 +100,7 @@ public class AuthServiceImpl implements AuthService{
     }
 
     private ResponseEntity<Map<String, Object>> handleGenericError(Exception e) {
+        e.printStackTrace();
         System.out.println("Unexpected error: " + e.getMessage());
         return ResponseEntity.internalServerError()
             .body(Map.of("status", "error", "message", "Internal server error"));

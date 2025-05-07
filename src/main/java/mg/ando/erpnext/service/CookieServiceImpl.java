@@ -40,4 +40,13 @@ public class CookieServiceImpl implements CookieService {
             cookie.setAttribute("Partitioned", "true");
         }
     }
+
+    @Override
+    public void setUserCookie(HttpServletResponse response, String user) {
+        Cookie cookie = createBaseCookie("user", user);
+        cookie.setMaxAge(MAX_COOKIE_AGE);
+        cookie.setSecure(productionMode);
+        addCookieAttributes(cookie);
+        response.addCookie(cookie);
+    }
 }

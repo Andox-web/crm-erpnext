@@ -130,15 +130,16 @@
                         items.forEach(item => {
                             const row = document.createElement('tr');
                             row.setAttribute('data-item-id', item.name);
-
-                            // Déterminer si l'input doit être en lecture seule
+                            console.log(item);
+                            
+                            // Déterminer si l'input doit être en lecture seule 
                             const isReadOnly = quoteStatus !== 'Draft' ? 'readonly' : '';
                             if(isReadOnly) {
                                 document.querySelector('#modalFooter').style.display = 'none';
                             }
                             row.innerHTML = `
-                                <td>${item.item_name}</td>
-                                <td>${item.item_code}</td>
+                                <td>${item.itemName}</td>
+                                <td>${item.itemCode}</td>
                                 <td>${item.qty}</td>
                                 <td>
                                     <input type="number" class="form-control price-input" 

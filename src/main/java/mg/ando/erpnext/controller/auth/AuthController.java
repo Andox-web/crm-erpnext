@@ -6,6 +6,7 @@ import mg.ando.erpnext.service.CookieService;
 import java.util.Map;
 
 import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -37,22 +38,15 @@ public class AuthController {
 
         if (result.getStatusCode().is2xxSuccessful()) {
             String cookieToken = (String) result.getBody().get("cookie");
+            String user = (String) result.getBody().get("user");
             cookieService.setSessionCookie(response, cookieToken);
+            cookieService.setUserCookie(response, user);
         }
-
         return ResponseEntity.status(result.getStatusCode())
             .body(result.getBody());
     }
 
-    @PostMapping("/logout")
-    public ResponseEntity<Map<String, Object>> logout(HttpServletResponse response) {
-        authService.logout();
-        cookieService.expireSessionCookie(response);
-        return ResponseEntity.ok(Map.of(
-            "status", "success",
-            "message", "Logout successful"
-        ));
-    }
+    
 
     public static class LoginRequest {
         private String username;
