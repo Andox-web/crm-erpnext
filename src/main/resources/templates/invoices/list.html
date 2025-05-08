@@ -17,11 +17,11 @@
                         </button>
                         <ul class="dropdown-menu">
                             <li><a class="dropdown-item" 
-                                   th:href="@{'/accounting/' + ${invoiceType}}">Tous</a></li>
+                                   th:href="@{'/purchase-invoices'}">Tous</a></li>
                             <li><a class="dropdown-item" 
-                                   th:href="@{'/accounting/' + ${invoiceType}(status='Paid')}">Payées</a></li>
+                                   th:href="@{'/purchase-invoices'(status='Paid')}">Payées</a></li>
                             <li><a class="dropdown-item" 
-                                   th:href="@{'/accounting/' + ${invoiceType}(status='Unpaid')}">Impayées</a></li>
+                                   th:href="@{'/purchase-invoices'(status='Unpaid')}">Impayées</a></li>
                         </ul>
                     </div>
                 </div>
