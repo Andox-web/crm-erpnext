@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title layout:title-pattern="$CONTENT_TITLE - $LAYOUT_TITLE">CRM</title>
+    
+    <!-- Bootstrap CSS local -->
+    <link href="/css/bootstrap.min.css" rel="stylesheet">
+    
+    <!-- Font Awesome local -->
+    <link rel="stylesheet" href="/css/fontawesome.min.css">
+    
+    <!-- SweetAlert local -->
+    <script src="/js/sweetalert2.min.js"></script>
+    
+    <!-- Styles locaux -->
+    <link rel="stylesheet" th:href="@{/css/constant.css}">
+    <link rel="stylesheet" th:href="@{/css/template.css}">
+    <link rel="stylesheet" th:href="@{/css/header.css}">
+    <link rel="stylesheet" th:href="@{/css/sidebar.css}">
+    <link rel="stylesheet" th:href="@{/css/footer.css}">
+    
+    <!-- Préchargement des polices Font Awesome -->
+    <link rel="preload" href="/webfonts/fa-solid-900.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/webfonts/fa-brands-400.woff2" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="/webfonts/fa-regular-400.woff2" as="font" type="font/woff2" crossorigin>
+</head>
+<body>
+    <!-- Fragment Header -->
+    <header th:replace="~{fragments/header :: header}"></header>
+    
+    <!-- Fragment Sidebar -->
+    <div th:replace="~{fragments/sidebar :: sidebar}"></div>
+    
+    <!-- Contenu principal -->
+    <div class="main-content">
+        <div layout:fragment="content">
+            <!-- Le contenu spécifique à chaque page sera inséré ici -->
+        </div>
+        
+    </div>
+    
+    <!-- Fragment Footer -->
+    <footer th:replace="~{fragments/footer :: footer}"></footer>
+    
+    <!-- Bootstrap JS local -->
+    <script src="/js/bootstrap.bundle.min.js"></script>
+    
+    <!-- Scripts globaux -->
+    <script>
+        // Fonction pour basculer la sidebar
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            if (!sidebar) return;
+            
+            sidebar.classList.toggle('collapsed');
+            
+            const mainContent = document.querySelector('.main-content');
+            if (!mainContent) return;
+            
+            if (sidebar.classList.contains('collapsed')) {
+                mainContent.style.marginLeft = 'var(--sidebar-collapsed-width)';
+            } else {
+                mainContent.style.marginLeft = 'var(--sidebar-width)';
+            }
+            
+            // Sauvegarder l'état dans localStorage
+            localStorage.setItem('sidebarCollapsed', sidebar.classList.contains('collapsed'));
+        }
+        
+        // Fonction pour afficher une alerte SweetAlert
+        function showAlert(section) {
+            if (typeof Swal !== 'undefined') {
+                Swal.fire({
+                    title: 'Détails ' + section,
+                    text: 'Cette fonctionnalité sera implémentée prochainement.',
+                    icon: 'info',
+                    confirmButtonText: 'OK',
+                    confirmButtonColor: 'var(--primary-color)'
+                });
+            } else {
+                alert('Détails ' + section + '\nCette fonctionnalité sera implémentée prochainement.');
+            }
+        }
+        
+        // Gestion des sous-menus et restauration de l'état
+        document.addEventListener('DOMContentLoaded', function() {
+            // Restaurer l'état de la sidebar
+            const sidebar = document.getElementById('sidebar');
+            const savedState = localStorage.getItem('sidebarCollapsed');
+            if (sidebar && savedState === 'true') {
+                sidebar.classList.add('collapsed');
+                const mainContent = document.querySelector('.main-content');
+                if (mainContent) {
+                    mainContent.style.marginLeft = 'var(--sidebar-collapsed-width)';
+                }
+            }
+            
+            // Gestion du toggle de la sidebar
+            document.getElementById('sidebarToggle')?.addEventListener('click', toggleSidebar);
+            
+            // Gestion des sous-menus
+            document.querySelectorAll('.nav-link[data-bs-toggle="collapse"]').forEach(function(element) {
+                element.addEventListener('click', function() {
+                    const icon = this.querySelector('.ms-auto')?.firstElementChild;
+                    if (icon) {
+                        icon.classList.toggle('fa-chevron-up');
+                        icon.classList.toggle('fa-chevron-down');
+                    }
+                });
+            });
+            
+            // Vérifier que Bootstrap est chargé
+            if (typeof bootstrap === 'undefined') {
+                console.error("Bootstrap n'a pas été chargé correctement");
+            }
+        });
+    </script>
+</body>
+</html>

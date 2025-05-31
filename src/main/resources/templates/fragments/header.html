@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <div th:fragment="header">
+        <header class="app-header">
+            <div class="container-fluid d-flex align-items-center h-100">
+                <button class="sidebar-toggle me-3" id="sidebarToggle">
+                    <i class="fas fa-bars"></i>
+                </button>
+                
+                <div class="d-flex align-items-center">
+                    <h4 class="mb-0">CRM - ERPNEXT</h4>
+                </div>
+                
+                <div class="ms-auto user-info">
+                    <div class="user-avatar"><span class="fas fa-users"></span></div>
+                    <span th:text="${user}"></span>
+                    <a href="/logout">
+                        <button class="btn btn-sm btn-outline-light ms-3">
+                            <i class="fas fa-sign-out-alt"></i>
+                        </button>
+                    </a>
+                </div>
+            </div>
+        </header>
+    </div>
+</body>
+</html>

@@ -1,0 +1,32 @@
+/* Styles globaux */
+body {
+    background-color: #f8f9fa;
+    font-family: var(--font-family);
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    font-size: var(--font-size-base);
+}
+
+/* Styles pour le contenu principal */
+.main-content {
+    margin-left: var(--sidebar-width);
+    padding: var(--content-padding);
+    transition: margin-left var(--transition-duration) var(--transition-timing);
+    flex: 1;
+}
+
+.content-card {
+    background: white;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    padding: var(--content-padding);
+    margin-bottom: 20px;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    .main-content {
+        margin-left: var(--sidebar-collapsed-width);
+    }
+}

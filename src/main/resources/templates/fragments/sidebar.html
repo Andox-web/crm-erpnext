@@ -1,0 +1,28 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+</head>
+<body>
+    <div th:fragment="sidebar">
+        <div id="sidebar">
+            <nav class="sidebar-nav">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#usersMenu">
+                            <span class="nav-icon"><i class="fas fa-users"></i></span>
+                            <span class="nav-text">Utilisateurs</span>
+                            <span class="ms-auto"><i class="fas fa-chevron-up"></i></span>
+                        </a>
+                        <div id="usersMenu" class="submenu collapse show">
+                            <a class="nav-link" href="#">Liste des utilisateurs</a>
+                            <a class="nav-link" href="#">Ajouter un utilisateur</a>
+                            <a class="nav-link" href="#">Rôles</a>
+                        </div>
+                    </li>
+                </ul>
+            </nav>
+        </div>
+    </div>
+</body>
+</html>
