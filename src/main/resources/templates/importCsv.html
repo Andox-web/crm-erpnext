@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{template}">
+<head>
+    <title>Importation CSV</title>
+    <style>
+        .import-container {
+            background-color: white;
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            padding: 30px;
+            margin-top: 20px;
+        }
+        
+        .file-card {
+            border: 2px dashed var(--medium-color);
+            border-radius: var(--border-radius);
+            padding: 25px;
+            text-align: center;
+            transition: all var(--transition-duration) var(--transition-timing);
+            margin-bottom: 20px;
+            background-color: var(--light-color);
+        }
+        
+        .file-card:hover {
+            border-color: var(--accent-color);
+            background-color: rgba(52, 152, 219, 0.05);
+        }
+        
+        .file-card i {
+            font-size: var(--font-size-xxlarge);
+            color: var(--dark-color);
+            margin-bottom: 15px;
+        }
+        
+        .submit-btn {
+            background-color: var(--success-color);
+            border: none;
+            padding: 12px 30px;
+            font-size: var(--font-size-large);
+            margin-top: 10px;
+            transition: background-color var(--transition-duration) var(--transition-timing);
+        }
+        
+        .submit-btn:hover {
+            background-color: #27ae60;
+        }
+        
+        .required-label::after {
+            content: " *";
+            color: var(--danger-color);
+        }
+    </style>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="container mt-5">
+            <h1 class="mb-4">Importation des données CSV</h1>
+            
+            <div class="import-container">
+                <form method="POST" action="/import/csv" enctype="multipart/form-data" id="importForm">
+                    <div class="row">
+                        <!-- Carte Employés -->
+                        <div class="col-md-4">
+                            <div class="file-card">
+                                <i class="fas fa-users"></i>
+                                <h4>Employés</h4>
+                                <label for="employeCsv" class="btn btn-outline-primary mt-2 required-label">
+                                    Sélectionner un fichier
+                                </label>
+                                <input type="file" 
+                                       class="d-none" 
+                                       id="employeCsv" 
+                                       name="employeCsv" 
+                                       accept=".csv" 
+                                       required>
+                                <div id="employeFileName" class="mt-2 small text-muted">Aucun fichier sélectionné</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Carte Structures Salariales -->
+                        <div class="col-md-4">
+                            <div class="file-card">
+                                <i class="fas fa-sitemap"></i>
+                                <h4>Structures Salariales</h4>
+                                <label for="salaryStructureCsv" class="btn btn-outline-primary mt-2 required-label">
+                                    Sélectionner un fichier
+                                </label>
+                                <input type="file" 
+                                       class="d-none" 
+                                       id="salaryStructureCsv" 
+                                       name="salaryStructureCsv" 
+                                       accept=".csv" 
+                                       required>
+                                <div id="structureFileName" class="mt-2 small text-muted">Aucun fichier sélectionné</div>
+                            </div>
+                        </div>
+                        
+                        <!-- Carte Bulletins de Salaire -->
+                        <div class="col-md-4">
+                            <div class="file-card">
+                                <i class="fas fa-file-invoice-dollar"></i>
+                                <h4>Bulletins de Salaire</h4>
+                                <label for="salarySlipCsv" class="btn btn-outline-primary mt-2 required-label">
+                                    Sélectionner un fichier
+                                </label>
+                                <input type="file" 
+                                       class="d-none" 
+                                       id="salarySlipCsv" 
+                                       name="salarySlipCsv" 
+                                       accept=".csv" 
+                                       required>
+                                <div id="slipFileName" class="mt-2 small text-muted">Aucun fichier sélectionné</div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="text-center mt-4">
+                        <button type="submit" class="btn submit-btn">
+                            <i class="fas fa-upload me-2"></i>Importer les fichiers
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="alert alert-info mt-4">
+                <i class="fas fa-info-circle me-2"></i>
+                Assurez-vous que les fichiers CSV sont formatés correctement avant l'importation.
+            </div>
+        </div>
+        <script layout:fragment="scripts">
+            document.addEventListener('DOMContentLoaded', function() {
+                // Gestion de l'affichage des noms de fichiers
+                document.getElementById('employeCsv').addEventListener('change', function(e) {
+                    document.getElementById('employeFileName').textContent = 
+                        e.target.files[0] ? e.target.files[0].name : 'Aucun fichier sélectionné';
+                });
+                
+                document.getElementById('salaryStructureCsv').addEventListener('change', function(e) {
+                    document.getElementById('structureFileName').textContent = 
+                        e.target.files[0] ? e.target.files[0].name : 'Aucun fichier sélectionné';
+                });
+                
+                document.getElementById('salarySlipCsv').addEventListener('change', function(e) {
+                    document.getElementById('slipFileName').textContent = 
+                        e.target.files[0] ? e.target.files[0].name : 'Aucun fichier sélectionné';
+                });
+                
+                // Gestion des messages de retour
+                const successMessage = /*[[${success}]]*/ '';
+                const errorMessage = /*[[${error}]]*/ '';
+                
+                if (successMessage) {
+                    Swal.fire({
+                        title: 'Succès!',
+                        text: successMessage,
+                        icon: 'success',
+                        confirmButtonColor: 'var(--success-color)'
+                    });
+                }
+                
+                if (errorMessage) {
+                    Swal.fire({
+                        title: 'Erreur!',
+                        text: errorMessage,
+                        icon: 'error',
+                        confirmButtonColor: 'var(--danger-color)'
+                    });
+                }
+            });
+        </script>
+    </div>
+</body>
+</html>

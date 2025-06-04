@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org" 
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{template}" >
+<head>
+    <meta charset="UTF-8">
+    <title>Liste des employés</title>
+    <link rel="stylesheet" th:href="@{/css/employe.css}">
+</head>
+<body>
+    <div layout:fragment="content" class="content container">
+        <h1>Liste des employés</h1>
+
+        <!-- Formulaire de filtre -->
+        <form method="get" th:action="@{/employes}" class="filter-form">
+            <input type="text" name="employee_name" placeholder="Employee name" th:value="${filter['employee_name'] ?: ''}">
+            <input type="date" name="max_date_of_joining" placeholder="Max Date Of Joining" th:value="${filter['max_date_of_joining']}">
+            <input type="date" name="min_date_of_joining" placeholder="Min Date Of Joining" th:value="${filter['min_date_of_joining']}">
+            <button type="submit">Filtrer</button>
+        </form>
+
+        <!-- Tableau des employés -->
+        <table class="employe-table">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Prénom</th>
+                    <th>Nom</th>
+                    <th>Sexe</th>
+                    <th>Date d'embauche</th>
+                    <th>Société</th>
+                    <th>Numéro employé</th>
+                    <th>Salaire</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="emp : ${employes}">
+                    <td th:text="${emp.name}">ID</td>
+                    <td th:text="${emp.firstName}">Prénom</td>
+                    <td th:text="${emp.lastName}">Nom</td>
+                    <td th:text="${emp.gender}">Sexe</td>
+                    <td th:text="${emp.dateOfJoining}">Date d'embauche</td>
+                    <td th:text="${emp.company}">Société</td>
+                    <td th:text="${emp.employeeNumber}">Numéro employé</td>
+                    <td>
+                        <a th:href="@{'/employes/' + ${emp.name} + '/salaires'}" >Salaire</a>
+                    </td>
+                </tr>
+                <tr th:if="${employes.empty}">
+                    <td colspan="13">Aucun employé trouvé</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>

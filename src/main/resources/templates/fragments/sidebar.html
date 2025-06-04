@@ -9,16 +9,21 @@
             <nav class="sidebar-nav">
                 <ul class="nav flex-column">
                     <li class="nav-item">
-                        <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#usersMenu">
-                            <span class="nav-icon"><i class="fas fa-users"></i></span>
-                            <span class="nav-text">Utilisateurs</span>
+                        <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#employeMenu">
+                            <span class="nav-icon"><i class="fas fa-user-tie"></i></span>
+                            <span class="nav-text">Employés</span>
                             <span class="ms-auto"><i class="fas fa-chevron-up"></i></span>
                         </a>
-                        <div id="usersMenu" class="submenu collapse show">
-                            <a class="nav-link" href="#">Liste des utilisateurs</a>
-                            <a class="nav-link" href="#">Ajouter un utilisateur</a>
-                            <a class="nav-link" href="#">Rôles</a>
-                        </div>
+                        <div id="employeMenu" class="submenu collapse">
+                            <a class="nav-link" href="/employes">Liste des employés</a>
+                            <a class="nav-link" href="/employes/salaries">Liste des fiches de paie</a>
+                    </div>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="/import" >
+                            <span class="nav-icon"><i class="fas fa-file-csv"></i></span>
+                            <span class="nav-text">Import Csv</span>
+                        </a>
                     </li>
                 </ul>
             </nav>

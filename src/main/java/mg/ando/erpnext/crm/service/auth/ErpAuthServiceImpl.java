@@ -14,7 +14,7 @@ import mg.ando.erpnext.crm.service.ErpRestService;
 @Service
 public class ErpAuthServiceImpl implements ErpAuthService{
 
-    private final String validateUrl = "/api/method/ping";
+    private final String validateUrl = "/api/method/frappe.auth.get_logged_user";
 
     private final String logoutUrl = "/api/method/logout";
 
@@ -31,8 +31,9 @@ public class ErpAuthServiceImpl implements ErpAuthService{
     public boolean isSessionValid() {
         try {
             ResponseEntity<String> response = erpRestService.callErpApiWithResponse(validateUrl, HttpMethod.GET, null,null, String.class);
-            System.out.println(response.getBody());
-            return response.getStatusCode().is2xxSuccessful();
+            return response.getStatusCode().is2xxSuccessful()
+                && response.getBody() != null
+                && !response.getBody().contains("Logged out");
         } catch (HttpClientErrorException e) {
             return false;
         } catch (Exception e) {

@@ -1,9 +1,11 @@
 /* Sidebar Styles */
 #sidebar {
     background-color: var(--secondary-color);
+    padding-top: var(--header-height);
     color: white;
+    top: 0;
     width: var(--sidebar-width);
-    min-height: calc(100vh - var(--header-height));
+    min-height: 100vh;
     transition: all var(--transition-duration) var(--transition-timing);
     z-index: 99;
     box-shadow: 3px 0 10px rgba(0,0,0,0.1);

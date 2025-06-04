@@ -89,6 +89,9 @@
     
     <!-- SweetAlert local -->
     <script src="/js/sweetalert2.min.js"></script>
+
+    <!-- Secure fetch -->
+    <script src="/js/SecureFetch.js"></script>
     
     <!-- Scripts spécifiques à la page de login -->
     <script>
@@ -118,7 +121,7 @@
                 buttonText.style.visibility = 'hidden';
 
                 try {
-                    const response = await fetch('/api/login', { 
+                    const response = await SecureFetch.request('/api/login', { 
                         method: 'POST',
                         credentials: 'include',
                         headers: {

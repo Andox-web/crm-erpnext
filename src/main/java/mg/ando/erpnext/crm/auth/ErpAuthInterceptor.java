@@ -54,7 +54,7 @@ public class ErpAuthInterceptor implements HandlerInterceptor {
             }
 
             // 2. Session expirée mais renouvelable
-            if (!erpAuthService.isSessionValid()) {    
+            if (!erpAuthService.isSessionValid()) { 
                 return handleUnauthorized(request, response);
             }
         }
