@@ -45,6 +45,13 @@ public class ErpRestServiceImpl implements ErpRestService{
             Class<T> responseType) {
 
         String url = apiUrl + endpoint;
+        // Ajout du paramètre limit_page_length=1000
+        if (url.contains("?")) {
+            url += "&limit_page_length=10000";
+        } else {
+            url += "?limit_page_length=10000";
+        }
+        
         HttpEntity<Object> requestEntity = requestBody != null
                 ? new HttpEntity<>(requestBody, httpHeaders)
                 : new HttpEntity<>(httpHeaders);

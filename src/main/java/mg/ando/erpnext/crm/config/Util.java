@@ -29,7 +29,7 @@ public class Util {
             Map<Integer, CSVRecord> recordMap = new HashMap<>();
             for (CSVRecord record : parser) {
                 // Use physical line number as key
-                recordMap.put((int) record.getRecordNumber(), record);
+                recordMap.put((int) record.getRecordNumber()+1, record);
             }
             return recordMap;
         }

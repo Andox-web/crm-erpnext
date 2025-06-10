@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{template}">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+    <title>Dashboard Salaires</title>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        .dashboard {
+            padding: 20px;
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        .dashboard-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .dashboard-title {
+            font-size: 2rem;
+            font-weight: bold;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .filter-container {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .filter-label {
+            font-weight: 500;
+            font-size: 1rem;
+            color: var(--primary-color);
+        }
+
+        .year-input-container {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .year-input {
+            width: 100px;
+            padding: 10px 15px;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--medium-color);
+            background: white;
+            font-size: 1rem;
+            color: var(--primary-color);
+        }
+
+        .btn-year-apply {
+            padding: 8px 12px;
+            font-size: 0.9rem;
+            background-color: var(--accent-color);
+            color: white;
+            border: none;
+            border-radius: var(--border-radius);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .btn-year-apply:hover {
+            background-color: #2980b9;
+        }
+
+        .summary-cards {
+            display: flex;
+            justify-content: space-between;
+            gap: 20px;
+            margin-bottom: 20px;
+            flex-wrap: wrap;
+        }
+
+        .summary-card {
+            flex: 1;
+            min-width: 200px;
+            background-color: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .summary-icon {
+            font-size: 2rem;
+            color: var(--accent-color);
+        }
+
+        .summary-value {
+            font-size: 1.5rem;
+            font-weight: bold;
+        }
+
+        .summary-label {
+            font-size: 1rem;
+            color: var(--secondary-color);
+        }
+
+        .charts-row {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 20px;
+            margin-bottom: 20px;
+        }
+
+        .charts-row > div {
+            flex: 1;
+            min-width: 300px;
+        }
+
+        .card {
+            background-color: white;
+            padding: 20px;
+            border-radius: var(--border-radius);
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 12px;
+        }
+
+        .card-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: var(--primary-color);
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 300px;
+        }
+
+        .table-container {
+            overflow-x: auto;
+        }
+
+        .table {
+            width: 100%;
+            border-collapse: collapse;
+            background-color: white;
+            font-size: 0.95rem;
+        }
+
+        .table thead {
+            background-color: var(--accent-color);
+            color: white;
+        }
+
+        .table th, .table td {
+            padding: 12px;
+            text-align: left;
+            border-bottom: 1px solid var(--medium-color);
+        }
+
+        .table-hover tbody tr:hover {
+            background-color: var(--light-color);
+        }
+
+        .no-data {
+            text-align: center;
+            padding: 40px 0;
+            color: var(--secondary-color);
+        }
+
+        .no-data i {
+            font-size: 3rem;
+            margin-bottom: 10px;
+            color: var(--medium-color);
+        }
+        .chart-row {
+            margin-bottom: 20px;
+        }
+        /* Charts en pleine largeur + plus de hauteur */
+        .chart-card {
+            margin-bottom: 30px;
+        }
+
+        .chart-container {
+            width: 100%;
+            height: 500px; /* par défaut tu avais 300px, on passe à 500px */
+        }
+
+        /* Pour que le canvas occupe vraiment tout l'espace */
+        .chart-container canvas {
+            width: 100% !important;
+            height: 100% !important;
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="dashboard" layout:fragment="content">
+        <!-- Titre du dashboard -->
+        <div class="dashboard-header">
+            <h1 class="dashboard-title"><i class="fas fa-chart-line"></i> Dashboard Salaires</h1>
+            <div class="filter-container">
+                <span class="filter-label">Année globale:</span>
+                <div class="year-input-container">
+                    <input type="number" id="globalYearFilter" class="year-input" min="2000" max="2100" />
+                    <button class="btn-year-apply" onclick="onYearFilterApply('globalYearFilter')">Appliquer</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Cartes de résumé -->
+        <div class="summary-cards">
+            <div class="summary-card">
+                <i class="fas fa-wallet summary-icon"></i>
+                <div class="summary-value" id="totalNetPay">€0.00</div>
+                <div class="summary-label">Salaire Net Total</div>
+            </div>
+            <div class="summary-card">
+                <i class="fas fa-money-bill-wave summary-icon"></i>
+                <div class="summary-value" id="totalGrossPay">€0.00</div>
+                <div class="summary-label">Salaire Brut Total</div>
+            </div>
+            <div class="summary-card">
+                <i class="fas fa-file-invoice-dollar summary-icon"></i>
+                <div class="summary-value" id="totalDeductions">€0.00</div>
+                <div class="summary-label">Déductions Total</div>
+            </div>
+        </div>
+
+        <!-- Graphiques côte à côte -->
+        <!-- Graphiques un en dessous de l'autre -->
+        <div>
+            <div class="card chart-card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-euro-sign"></i> Évolution des salaires</h3>
+                    <div class="filter-container">
+                        <span class="filter-label">Année:</span>
+                        <div class="year-input-container">
+                            <input type="number" id="salaryYearFilter" class="year-input" min="2000" max="2100" />
+                            <button class="btn-year-apply" onclick="onYearFilterApply('salaryYearFilter')">Appliquer</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="salaryChart"></canvas>
+                </div>
+            </div>
+
+            <div class="card chart-card">
+                <div class="card-header">
+                    <h3 class="card-title"><i class="fas fa-list"></i> Détails des salaires par type</h3>
+                    <div class="filter-container">
+                        <span class="filter-label">Année:</span>
+                        <div class="year-input-container">
+                            <input type="number" id="detailYearFilter" class="year-input" min="2000" max="2100" />
+                            <button class="btn-year-apply" onclick="onYearFilterApply('detailYearFilter')">Appliquer</button>
+                        </div>
+                    </div>
+                </div>
+                <div class="chart-container">
+                    <canvas id="detailChart"></canvas>
+                </div>
+            </div>
+        </div>
+
+
+        <!-- Tableau des salaires -->
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title"><i class="fas fa-table"></i> Récapitulatif mensuel</h3>
+                <div class="filter-container">
+                    <span class="filter-label">Année:</span>
+                    <div class="year-input-container">
+                        <input type="number" id="tableYearFilter" class="year-input" min="2000" max="2100" />
+                        <button class="btn-year-apply" onclick="onYearFilterApply('tableYearFilter')">Appliquer</button>
+                    </div>
+                </div>
+            </div>
+            <div class="table-container">
+                <table class="table table-hover">
+                    <thead>
+                        <tr>
+                            <th>Mois</th>
+                            <th>Salaire Brut</th>
+                            <th>Salaire Net</th>
+                            <th>Déductions</th>
+                            <th>Total Arrondi</th>
+                            <th>Actions</th>
+                        </tr>
+                    </thead>
+                    <tbody id="salaryTableBody">
+                        <!-- Les données seront injectées dynamiquement -->
+                    </tbody>
+                </table>
+                <div id="noSalaryData" class="no-data" style="display: none;">
+                    <i class="fas fa-database"></i>
+                    <h4>Aucune donnée disponible</h4>
+                    <p>Veuillez sélectionner une autre année</p>
+                </div>
+            </div>
+        </div>
+         <!-- Script JS -->
+        <script>
+            document.addEventListener('DOMContentLoaded', function() {
+                initDashboard();
+            });
+
+            function initDashboard() {
+                const currentYear = new Date().getFullYear();
+                setYearValue('globalYearFilter', currentYear);
+                setYearValue('salaryYearFilter', currentYear);
+                setYearValue('detailYearFilter', currentYear);
+                setYearValue('tableYearFilter', currentYear);
+
+                loadData(currentYear);
+            }
+
+            function setYearValue(inputId, year) {
+                const input = document.getElementById(inputId);
+                input.value = year;
+            }
+
+            function onYearFilterApply(inputId) {
+                const year = parseInt(document.getElementById(inputId).value) || new Date().getFullYear();
+
+                if (inputId === 'globalYearFilter') {
+                    setYearValue('salaryYearFilter', year);
+                    setYearValue('detailYearFilter', year);
+                    setYearValue('tableYearFilter', year);
+                    loadData(year);
+                } else if (inputId === 'salaryYearFilter') {
+                    loadSalaryChart(year);
+                } else if (inputId === 'detailYearFilter') {
+                    loadDetailChart(year);
+                } else if (inputId === 'tableYearFilter') {
+                    loadTable(year);
+                }
+            }
+
+            // Fonctions pour charger les données
+            function loadData(year) {
+                fetch(`/dashboard/${year}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Erreur lors du chargement des données');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // Calcul des totaux annuels
+                        const totals = calculateAnnualTotals(data.month_salary_slip);
+                        updateSummaryCards(totals);
+                        
+                        // Chargement des composants
+                        loadSalaryChartFromData(data.month_salary_slip);
+                        loadDetailChartFromData(data.month_salary_detail);
+                        loadTableFromData(data.month_salary_slip);
+                    })
+                    .catch(error => {
+                        console.error('Erreur:', error);
+                        swal("Erreur", error.message, "error");
+                    });
+            }
+
+            function loadSalaryChart(year) {
+                fetch(`/dashboard/salary-slip/${year}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Erreur lors du chargement du graphique Salaire');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        loadSalaryChartFromData(data);
+                    })
+                    .catch(error => {
+                        console.error('Erreur:', error);
+                        swal("Erreur", error.message, "error");
+                    });
+            }
+
+            function loadDetailChart(year) {
+                fetch(`/dashboard/salary-detail/${year}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Erreur lors du chargement du graphique Détail');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        loadDetailChartFromData(data);
+                    })
+                    .catch(error => {
+                        console.error('Erreur:', error);
+                        swal("Erreur", error.message, "error");
+                    });
+            }
+
+            function loadTable(year) {
+                fetch(`/dashboard/salary-slip/${year}`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Erreur lors du chargement du tableau');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        loadTableFromData(data);
+                    })
+                    .catch(error => {
+                        console.error('Erreur:', error);
+                        swal("Erreur", error.message, "error");
+                    });
+            }
+
+            // Fonctions utilitaires
+            function calculateAnnualTotals(monthlyData) {
+                let totalNetPay = 0;
+                let totalGrossPay = 0;
+                let totalDeductions = 0;
+
+                Object.values(monthlyData).forEach(month => {
+                    totalNetPay += month.netPay || 0;
+                    totalGrossPay += month.grossPay || 0;
+                    totalDeductions += month.totalDeduction || 0;
+                });
+
+                return {
+                    totalNetPay,
+                    totalGrossPay,
+                    totalDeductions
+                };
+            }
+
+            function updateSummaryCards(data) {
+                document.getElementById('totalNetPay').textContent = `${data.totalNetPay.toFixed(2)}`;
+                document.getElementById('totalGrossPay').textContent = `${data.totalGrossPay.toFixed(2)}`;
+                document.getElementById('totalDeductions').textContent = `${data.totalDeductions.toFixed(2)}`;
+            }
+
+            // Affiche les composants de salaire d’un mois sélectionné
+            function showComponent(yearMonth) {
+                fetch(`/dashboard/salary-detail/${yearMonth}/one`)
+                    .then(response => {
+                        if (!response.ok) {
+                            throw new Error('Erreur lors du chargement du détail mensuel');
+                        }
+                        return response.json();
+                    })
+                    .then(data => {
+                        // data est une List<MonthSalaryDetail>
+                        console.log('Détail mensuel:', data);
+
+                        // Construire un message HTML pour swal
+                        let htmlContent = '<table style="width:100%;text-align:left;border-collapse:collapse;">';
+                        htmlContent += `
+                            <tr style="border-bottom:1px solid #ccc;">
+                                <th>Composant</th>
+                                <th>Montant</th>
+                                <th>Type</th>
+                            </tr>`;
+
+                        data.forEach(detail => {
+                            htmlContent += `
+                                <tr style="border-bottom:1px solid #eee;">
+                                    <td>${detail.salaryComponent}</td>
+                                    <td>${detail.amount.toFixed(2)} </td>
+                                    <td>${detail.type}</td>
+                                </tr>`;
+                        });
+
+                        htmlContent += '</table>';
+
+                        swal.fire({
+                            title: `Détail du salaire - ${yearMonth}`,
+                            html: htmlContent,
+                            icon: "info"
+                        });
+                    })
+                    .catch(error => {
+                        console.error('Erreur:', error);
+                        Swal.fire({
+                            title: "Erreur",
+                            text: error.message,
+                            icon: "error"
+                        });
+                    });
+
+            }
+
+            // Graphique principal (ex : évolution du salaire net / brut / déductions)
+            let salaryChart = null;
+            function loadSalaryChartFromData(data) {
+                console.log('Initialisation graphique salaire', data);
+
+                // Si un chart existe déjà, on le détruit
+                if (salaryChart !== null) {
+                    salaryChart.destroy();
+                }
+
+                // Préparer les labels (mois) et datasets
+                const labels = Object.keys(data).sort();
+
+                const grossPayData = labels.map(key => data[key].grossPay);
+                const netPayData = labels.map(key => data[key].netPay);
+                const totalDeductionData = labels.map(key => data[key].totalDeduction);
+
+                const ctx = document.getElementById('salaryChart').getContext('2d');
+
+                salaryChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: labels,
+                        datasets: [
+                            {
+                                label: 'Salaire Brut',
+                                data: grossPayData,
+                                borderColor: 'blue',
+                                fill: false,
+                                tension: 0.1
+                            },
+                            {
+                                label: 'Salaire Net',
+                                data: netPayData,
+                                borderColor: 'green',
+                                fill: false,
+                                tension: 0.1
+                            },
+                            {
+                                label: 'Déductions',
+                                data: totalDeductionData,
+                                borderColor: 'red',
+                                fill: false,
+                                tension: 0.1
+                            }
+                        ]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Évolution du salaire'
+                            },
+                            tooltip: {
+                                enabled: true,          // On active les tooltips (au cas où)
+                                intersect: false       // Pas besoin d'être pile sur le point
+                            }
+                        },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+
+                });
+            }
+
+
+            // Graphique détaillé par composant
+            let detailChart = null;
+            function loadDetailChartFromData(data) {
+                console.log('Initialisation graphique détail', data);
+
+                // Si un chart existe déjà, on le détruit
+                if (detailChart !== null) {
+                    detailChart.destroy();
+                }
+
+                const labels = new Set();
+
+                // Récupérer tous les mois
+                for (const component in data) {
+                    for (const ym in data[component]) {
+                        labels.add(ym);
+                    }
+                }
+
+                const sortedLabels = Array.from(labels).sort();
+
+                // Préparer les datasets par composant
+                const datasets = [];
+
+                for (const component in data) {
+                    const componentData = sortedLabels.map(ym => {
+                        return data[component][ym]?.amount || 0;
+                    });
+
+                    datasets.push({
+                        label: component,
+                        data: componentData,
+                        borderColor: getRandomColor(),
+                        fill: false,
+                        tension: 0.1
+                    });
+                }
+
+                const ctx = document.getElementById('detailChart').getContext('2d');
+
+                detailChart = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: sortedLabels,
+                        datasets: datasets
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            title: {
+                                display: true,
+                                text: 'Détail des composants du salaire'
+                            }
+                        },
+                        tooltip: {
+                                enabled: true,          // On active les tooltips (au cas où)
+                                intersect: false       // Pas besoin d'être pile sur le point
+                            },
+                        scales: {
+                            y: {
+                                beginAtZero: true
+                            }
+                        }
+                    }
+                });
+            }
+
+
+            // Tableau synthétique des salaires
+            function loadTableFromData(data) {
+                if (!data) {
+                    console.error('Erreur : data est vide ou undefined');
+                    return;
+                }
+
+                console.log('Initialisation tableau', data);
+
+                const table = document.getElementById('salaryTableBody');
+                table.innerHTML = '';
+
+                Object.keys(data).sort().forEach(key => {
+                    const slip = data[key];
+                    const row = document.createElement('tr');
+                    row.style.borderBottom = '1px solid #eee';
+
+                    // On extrait mois et année depuis slip.yearMonth (format attendu "2025-04" par ex.)
+                    const [year, month] = slip.yearMonth.split('-');
+
+                    row.innerHTML = `
+                        <td>${key}</td>
+                        <td>${slip.grossPay.toFixed(2)}</td>
+                        <td>${slip.netPay.toFixed(2)}</td>
+                        <td>${slip.totalDeduction.toFixed(2)}</td>
+                        <td>${slip.roundedTotal.toFixed(2)}</td>
+                        <td>
+                            <button onclick="showComponent('${slip.yearMonth}')">Voir Composant</button>
+                            <button onclick="window.location.href='/salaries?month=${parseInt(month)}&year=${year}'">Voir Detail Total</button>
+                        </td>
+                    `;
+
+                    table.appendChild(row);
+                });
+            }
+
+
+
+            // Fonction utilitaire pour couleurs aléatoires
+            function getRandomColor() {
+                const letters = '0123456789ABCDEF';
+                let color = '#';
+                for (let i = 0; i < 6; i++) {
+                    color += letters[Math.floor(Math.random() * 16)];
+                }
+                return color;
+            }
+
+        </script>
+    </div>
+</body>
+</html>

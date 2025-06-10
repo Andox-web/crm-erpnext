@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="fr" xmlns:th="http://www.thymeleaf.org"
+      xmlns:layout="http://www.ultraq.net.nz/thymeleaf/layout"
+      layout:decorate="~{template}">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" th:href="@{/css/salary.css}">
+    <title>Fiches de paie - [[${employe.employeeName}]]</title>
+</head>
+<body>
+<div layout:fragment="content">
+    <div class="container mt-4">
+        <h2 class="mb-4">Fiches de paie - [[${employe.employeeName}]]</h2>
+        
+        <div class="card mb-4">
+            <div class="card-body">
+                <p><strong>Matricule :</strong> <span th:text="${employe.employeeNumber}"></span></p>
+                <p><strong>Date d'entrée :</strong> <span th:text="${employe.dateOfJoining}"></span></p>
+                <p><strong>Entreprise :</strong> <span th:text="${employe.company}"></span></p>
+            </div>
+        </div>
+
+        <h3>Historique des fiches de paie</h3>
+        <table class="table table-hover mt-3">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Date de début</th>
+                    <th>Date de fin</th>
+                    <th>Brut</th>
+                    <th>Total Deduction</th>
+                    <th>Net</th>
+                    <th>PDF</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr th:each="slip : ${salarySlips}">
+                    <td th:text="${slip.name}"></td>
+                    <td th:text="${slip.startDate}"></td>
+                    <td th:text="${slip.endDate}"></td>
+                    <td th:text="${slip.grossPay}"></td>
+                    <td th:text="${slip.totalDeduction}"></td>
+                    <td th:text="${slip.netPay}"></td>
+                    <td>
+                        <a th:href="@{/salaries/salaryslip/pdf?name={id}(id=${slip.name})}" 
+                            class="btn btn-sm btn-danger">
+                            <i class="fas fa-file-pdf"></i> PDF
+                        </a>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+</body>
+</html>

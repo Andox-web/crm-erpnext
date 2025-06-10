@@ -14,8 +14,8 @@
         <!-- Formulaire de filtre -->
         <form method="get" th:action="@{/employes}" class="filter-form">
             <input type="text" name="employee_name" placeholder="Employee name" th:value="${filter['employee_name'] ?: ''}">
-            <input type="date" name="max_date_of_joining" placeholder="Max Date Of Joining" th:value="${filter['max_date_of_joining']}">
             <input type="date" name="min_date_of_joining" placeholder="Min Date Of Joining" th:value="${filter['min_date_of_joining']}">
+            <input type="date" name="max_date_of_joining" placeholder="Max Date Of Joining" th:value="${filter['max_date_of_joining']}">
             <button type="submit">Filtrer</button>
         </form>
 
@@ -43,7 +43,7 @@
                     <td th:text="${emp.company}">Société</td>
                     <td th:text="${emp.employeeNumber}">Numéro employé</td>
                     <td>
-                        <a th:href="@{'/employes/' + ${emp.name} + '/salaires'}" >Salaire</a>
+                        <a th:href="@{'/salaries/employee/' + ${emp.name} }" >Salaire</a>
                     </td>
                 </tr>
                 <tr th:if="${employes.empty}">

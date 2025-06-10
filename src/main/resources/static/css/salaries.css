@@ -1,69 +1,66 @@
-/* salary.css */
-.container.mt-4 {
-    padding: var(--content-padding);
-    background-color: white;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    margin-top: 20px !important;
-    margin-bottom: 40px;
-}
-
-h2 {
-    color: var(--primary-color);
-    padding-bottom: 15px;
-    border-bottom: 2px solid var(--accent-color);
-    margin-bottom: 25px;
-    font-size: var(--font-size-xxlarge);
-}
-
-h3 {
-    color: var(--secondary-color);
-    margin: 30px 0 20px;
-    font-size: var(--font-size-xlarge);
-    padding-bottom: 10px;
-    border-bottom: 1px solid var(--light-color);
-}
-
-/* Carte d'information employé */
-.card {
-    border: none;
-    border-radius: var(--border-radius);
-    box-shadow: var(--box-shadow);
-    margin-bottom: 30px;
-    transition: transform 0.3s ease, box-shadow 0.3s ease;
-}
-
-.card:hover {
-    transform: translateY(-5px);
-    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-}
-
-.card-body {
-    padding: 25px;
-    display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-    gap: 15px;
-}
-
-.card-body p {
-    margin: 0;
-    padding: 10px 0;
-    border-bottom: 1px dashed var(--light-color);
-    display: flex;
-    justify-content: space-between;
-}
-
-.card-body p:last-child {
+/* salaryslip-list.css */
+.card-header.bg-primary {
+    background-color: var(--primary-color) !important;
     border-bottom: none;
 }
 
-.card-body strong {
-    color: var(--primary-color);
-    min-width: 120px;
-    display: inline-block;
+.card {
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    border: none;
 }
 
-/* Tableau des fiches de paie */
+/* Formulaire de filtre */
+form.row.g-3 {
+    background-color: white;
+    padding: 20px;
+    border-radius: var(--border-radius);
+    box-shadow: var(--box-shadow);
+    margin-bottom: 30px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 15px;
+    align-items: flex-end;
+}
+
+.form-item {
+    padding: 10px 15px;
+    border: 1px solid var(--medium-color);
+    border-radius: 5px;
+    font-family: var(--font-family);
+    font-size: var(--font-size-base);
+    width: 100%;
+    background-color: white;
+}
+
+.form-item:focus {
+    outline: none;
+    border-color: var(--accent-color);
+    box-shadow: 0 0 0 3px rgba(52, 152, 219, 0.2);
+}
+
+.btn-primary {
+    background-color: var(--accent-color);
+    border: none;
+    padding: 10px 20px;
+    border-radius: 5px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: background-color var(--transition-duration) var(--transition-timing);
+    height: 40px;
+    color: white;
+}
+
+.btn-primary:hover {
+    background-color: #2980b9;
+}
+
+.btn-outline-secondary {
+    border: 1px solid var(--medium-color);
+    color: var(--secondary-color);
+    background: white;
+}
+
 .table {
     width: 100%;
     border-collapse: collapse;
@@ -134,8 +131,9 @@ h3 {
 
 /* Responsive */
 @media (max-width: 992px) {
-    .card-body {
-        grid-template-columns: 1fr;
+    form.row.g-3 {
+        flex-direction: column;
+        align-items: stretch;
     }
     
     .table {
@@ -147,24 +145,15 @@ h3 {
 @media (max-width: 768px) {
     .table th, 
     .table td {
-        padding: 12px 15px;
-        font-size: 0.9rem;
+        padding: 10px 15px;
     }
     
-    .btn-outline-primary {
+    .btn-sm {
         padding: 6px 12px;
         font-size: 0.9rem;
     }
-}
-
-@media (max-width: 576px) {
-    .card-body p {
-        flex-direction: column;
-        gap: 5px;
-    }
     
-    .table th, 
-    .table td {
-        padding: 10px 12px;
+    .card-header h5 {
+        font-size: 1.1rem;
     }
 }

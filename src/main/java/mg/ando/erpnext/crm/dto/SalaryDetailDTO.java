@@ -6,7 +6,6 @@ import lombok.Data;
 
 @Data
 public class SalaryDetailDTO {
-
     @JsonProperty("salary_component")
     private String salaryComponent;
     
@@ -18,4 +17,13 @@ public class SalaryDetailDTO {
     
     @JsonProperty("amount")
     private Double amount;
+
+    private String type;
+    private String salarySlip;
+
+    @JsonProperty("parentfield")
+    private String parentfield;
+    
+    @JsonProperty("parent")
+    private String parent;
 }

@@ -3,7 +3,10 @@ package mg.ando.erpnext.crm.service.importcsv;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.apache.commons.csv.CSVRecord;
 import org.springframework.http.HttpMethod;
@@ -59,9 +62,12 @@ public class ImportCsvServiceImpl implements ImportCsvService {
         Map<String, SalaryStructureDTO> salaryStructures = new HashMap<>();
         Map<String, SalaryComponentDTO> salaryComponents = new HashMap<>();
         
+        Set<String> fiscalYears = new HashSet<>();
         Map<String, SalarySlipDTO> salarySlips = new HashMap<>();
         Map<String, SalaryAssignmentDTO> salaryAssignments = new HashMap<>();
         
+
+        List<String> allErrors = new ArrayList<>();
         for (Map.Entry<Integer,CSVRecord> employeRecord : employeRecords.entrySet()) {
             // Ref	Nom	Prenom	genre	Date embauche	date naissance	company
             try{
@@ -88,11 +94,16 @@ public class ImportCsvServiceImpl implements ImportCsvService {
                     companies.put(company.getName(), company);
                 }
             }catch (Exception e) {
-                System.err.println("Erreur lors de la lecture de l'enregistrement employé à la ligne " + employeRecord.getKey() + ": " + e.getMessage());
-                throw new ImportCsvException("Erreur lors de la lecture de l'enregistrement employé à la ligne " + employeRecord.getKey() + ": " + e.getMessage(), e);
+                allErrors.add("Ligne " + employeRecord.getKey() + ": " + e.getMessage());
             }
         }
-
+        
+        if (!allErrors.isEmpty()) {
+            throw new ImportCsvException(
+                "Erreurs dans le fichier employé:\n" + 
+                String.join("\n")
+            );
+        }
         for (Map.Entry<Integer,CSVRecord> salaryStructureRecord : salaryStructureRecords.entrySet()) {
             // salary structure	name	Abbr	type	valeur	company
             CSVRecord record = salaryStructureRecord.getValue();
@@ -155,10 +166,15 @@ public class ImportCsvServiceImpl implements ImportCsvService {
 
 
             }catch (Exception e) {
-                System.err.println("Erreur lors de la lecture de l'enregistrement structure salariale à la ligne " + salaryStructureRecord.getKey() + ": " + e.getMessage());
-                throw new ImportCsvException("Erreur lors de la lecture de l'enregistrement structure salariale à la ligne " + salaryStructureRecord.getKey() + ": " + e.getMessage(), e);
+                allErrors.add("Ligne " + salaryStructureRecord.getKey() + ": " + e.getMessage());
             }
             
+        }
+        if (!allErrors.isEmpty()) {
+            throw new ImportCsvException(
+                "Erreurs dans le fichier des structures salariales: " + 
+                String.join(" | ", allErrors)
+            );
         }
 
         for (Map.Entry<Integer,CSVRecord> salarySlipRecord : salarySlipRecords.entrySet()) {
@@ -177,14 +193,18 @@ public class ImportCsvServiceImpl implements ImportCsvService {
                 EmployeDTO employe = employes.get(record.get("Ref Employe"));
                 String startDate = DateConverter.getStartDateOfMonth(record.get("Mois"));
                 String endDate = DateConverter.getEndDateOfMonth(record.get("Mois"));
+                // Ajouter l'année fiscale à fiscalYears
+                String fiscalYear = DateConverter.getYear(startDate);
+                fiscalYears.add(fiscalYear);
+                fiscalYear= DateConverter.getYear(endDate);
+                fiscalYears.add(fiscalYear);
+
 
                 SalaryAssignmentDTO salaryAssignment = new SalaryAssignmentDTO();
                 salaryAssignment.setEmployee(record.get("Ref Employe"));
                 salaryAssignment.setSalaryStructure(record.get("Salaire"));
                 salaryAssignment.setCompany(employe.getCompany());
-                // Utiliser la date de début du mois précédent pour fromDate
-                String endDateOfPreviousMonth = DateConverter.getEndDateOfPreviousMonth(record.get("Mois"));
-                salaryAssignment.setFromDate(endDateOfPreviousMonth);
+                salaryAssignment.setFromDate(startDate);
                 salaryAssignment.setToDate(endDate);
                 salaryAssignment.setBase(Double.valueOf(record.get("Salaire Base")));
                 
@@ -202,9 +222,15 @@ public class ImportCsvServiceImpl implements ImportCsvService {
                 salarySlips.put(salarySlip.getEmployee()+salarySlip.getStartDate()+salarySlip.getSalaryStructure(), salarySlip);
 
             }catch (Exception e) {
-                System.err.println("Erreur lors de la lecture de l'enregistrement fiche de paie à la ligne " + salarySlipRecord.getKey() + ": " + e.getMessage());
-                throw new ImportCsvException("Erreur lors de la lecture de l'enregistrement fiche de paie à la ligne " + salarySlipRecord.getKey() + ": " + e.getMessage(), e);
+                allErrors.add("Ligne " + salarySlipRecord.getKey() + ": " + e.getMessage());
             }
+        }
+
+        if(!allErrors.isEmpty()){
+            throw new ImportCsvException(
+                "Erreurs dans le fichier des fiches de paie: |==> " + 
+                String.join(" |==> ", allErrors)
+            );
         }
         
         Map<String, Object> requestBody = new HashMap<>();
@@ -213,8 +239,45 @@ public class ImportCsvServiceImpl implements ImportCsvService {
         // Correction des clés ici :
         requestBody.put("salary_structures", objectMapper.writeValueAsString(new ArrayList<>(salaryStructures.values())));
         requestBody.put("salary_components", objectMapper.writeValueAsString(new ArrayList<>(salaryComponents.values())));
-        requestBody.put("salary_slips", objectMapper.writeValueAsString(new ArrayList<>(salarySlips.values())));
-        requestBody.put("salary_assignments", objectMapper.writeValueAsString(new ArrayList<>(salaryAssignments.values())));
+
+        // Trier salaryAssignments par fromDate puis toDate
+        List<SalaryAssignmentDTO> sortedSalaryAssignments = new ArrayList<>(salaryAssignments.values());
+        sortedSalaryAssignments.sort((a, b) -> {
+            try {
+            java.time.LocalDate aFrom = java.time.LocalDate.parse(a.getFromDate());
+            java.time.LocalDate bFrom = java.time.LocalDate.parse(b.getFromDate());
+            int cmp = aFrom.compareTo(bFrom);
+            if (cmp == 0) {
+                java.time.LocalDate aTo = java.time.LocalDate.parse(a.getToDate());
+                java.time.LocalDate bTo = java.time.LocalDate.parse(b.getToDate());
+                return aTo.compareTo(bTo);
+            }
+            return cmp;
+            } catch (Exception ex) {
+                // fallback to string compare if parsing fails
+                int cmp = a.getFromDate().compareTo(b.getFromDate());
+                if (cmp == 0) {
+                    return a.getToDate().compareTo(b.getToDate());
+                }
+                return cmp;
+            }
+        });
+        requestBody.put("salary_assignments", objectMapper.writeValueAsString(sortedSalaryAssignments));
+
+        requestBody.put("fiscal_years", objectMapper.writeValueAsString(fiscalYears));
+
+        // Trier salarySlips par startDate (convertir en LocalDate pour comparer)
+        List<SalarySlipDTO> sortedSalarySlips = new ArrayList<>(salarySlips.values());
+        sortedSalarySlips.sort((a, b) -> {
+            try {
+                java.time.LocalDate aStart = java.time.LocalDate.parse(a.getStartDate());
+                java.time.LocalDate bStart = java.time.LocalDate.parse(b.getStartDate());
+                return aStart.compareTo(bStart);
+                } catch (Exception ex) {
+                return a.getStartDate().compareTo(b.getStartDate());
+            }
+        });
+        requestBody.put("salary_slips", objectMapper.writeValueAsString(sortedSalarySlips));
 
         try {
             JsonNode response =  erpRestService.callErpApi(

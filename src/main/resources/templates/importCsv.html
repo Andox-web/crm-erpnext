@@ -59,7 +59,12 @@
             <h1 class="mb-4">Importation des données CSV</h1>
             
             <div class="import-container">
-                <form method="POST" action="/import/csv" enctype="multipart/form-data" id="importForm">
+                <div id="loadingSpinner" style="display:none; text-align:center; margin-top:20px;">
+                    <i class="fas fa-spinner fa-spin fa-3x"></i>
+                    <div class="mt-2">Importation en cours, veuillez patienter...</div>
+                </div>
+
+                <form enctype="multipart/form-data" id="importForm">
                     <div class="row">
                         <!-- Carte Employés -->
                         <div class="col-md-4">
@@ -131,7 +136,7 @@
         </div>
         <script layout:fragment="scripts">
             document.addEventListener('DOMContentLoaded', function() {
-                // Gestion de l'affichage des noms de fichiers
+                // Gestion de l'affichage des noms de fichiers (existant)
                 document.getElementById('employeCsv').addEventListener('change', function(e) {
                     document.getElementById('employeFileName').textContent = 
                         e.target.files[0] ? e.target.files[0].name : 'Aucun fichier sélectionné';
@@ -147,27 +152,69 @@
                         e.target.files[0] ? e.target.files[0].name : 'Aucun fichier sélectionné';
                 });
                 
-                // Gestion des messages de retour
-                const successMessage = /*[[${success}]]*/ '';
-                const errorMessage = /*[[${error}]]*/ '';
-                
-                if (successMessage) {
-                    Swal.fire({
-                        title: 'Succès!',
-                        text: successMessage,
-                        icon: 'success',
-                        confirmButtonColor: 'var(--success-color)'
-                    });
-                }
-                
-                if (errorMessage) {
-                    Swal.fire({
-                        title: 'Erreur!',
-                        text: errorMessage,
-                        icon: 'error',
-                        confirmButtonColor: 'var(--danger-color)'
-                    });
-                }
+                const importForm = document.getElementById('importForm');
+                const loadingSpinner = document.getElementById('loadingSpinner');
+
+                importForm.addEventListener('submit', async function(event) {
+                    event.preventDefault();
+
+                    // Récupération des fichiers
+                    const employeFile = document.getElementById('employeCsv').files[0];
+                    const structureFile = document.getElementById('salaryStructureCsv').files[0];
+                    const slipFile = document.getElementById('salarySlipCsv').files[0];
+
+                    // Validation des fichiers
+                    if (!employeFile || !structureFile || !slipFile) {
+                        Swal.fire({
+                            title: 'Erreur!',
+                            text: 'Veuillez sélectionner les trois fichiers',
+                            icon: 'error',
+                            confirmButtonColor: 'var(--danger-color)'
+                        });
+                        return;
+                    }
+
+                    const formData = new FormData();
+                    formData.append('employeCsv', employeFile);
+                    formData.append('salaryStructureCsv', structureFile);
+                    formData.append('salarySlipCsv', slipFile);
+
+                    try {
+                        // Montre le spinner
+                        loadingSpinner.style.display = 'block';
+                        importForm.querySelector('button[type="submit"]').disabled = true;
+
+                        const response = await SecureFetch.request('/import/csv', {
+                            method: 'POST',
+                            body: formData
+                        });
+
+                        if (response.ok) {
+                            const result = await response.json();
+                            Swal.fire({
+                                title: 'Succès!',
+                                text: result.message,
+                                icon: 'success',
+                                confirmButtonColor: 'var(--success-color)'
+                            });
+                        } else {
+                            const error = await response.json();
+                            throw new Error(error.message);
+                        }
+                    } catch (e) {
+                        Swal.fire({
+                            title: 'Erreur!',
+                            text: e.message || 'Erreur lors de l\'importation',
+                            icon: 'error',
+                            confirmButtonColor: 'var(--danger-color)'
+                        });
+                    } finally {
+                        // Cache le spinner et réactive le bouton
+                        loadingSpinner.style.display = 'none';
+                        importForm.querySelector('button[type="submit"]').disabled = false;
+                    }
+                });
+
             });
         </script>
     </div>

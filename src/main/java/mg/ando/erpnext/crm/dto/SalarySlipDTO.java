@@ -51,6 +51,7 @@ public class SalarySlipDTO {
 
     @JsonProperty("total_in_words")
     private String totalInWords;
+    
     private List<SalaryDetailDTO> earnings = new ArrayList<>();
     private List<SalaryDetailDTO> deductions = new ArrayList<>();;
 }

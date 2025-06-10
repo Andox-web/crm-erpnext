@@ -1,6 +1,9 @@
 package mg.ando.erpnext.crm.controller.salary;
 
+import java.time.Year;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
@@ -23,7 +26,7 @@ import mg.ando.erpnext.crm.service.salary.PdfService;
 import mg.ando.erpnext.crm.service.salary.SalarySlipService;
 
 @Controller
-@RequestMapping("/employes")
+@RequestMapping("/salaries")
 public class EmployeeSalaryController {
 
     private final EmployeService employeService;
@@ -36,7 +39,7 @@ public class EmployeeSalaryController {
         this.pdfService = pdfService;
     }
 
-    @GetMapping("/{employeeName}/salaires")
+    @GetMapping("/employee/{employeeName}")
     @RequireErpAuth
     public String getEmployeeSalaries(
             @PathVariable String employeeName,
@@ -47,7 +50,7 @@ public class EmployeeSalaryController {
         
         model.addAttribute("employe", employe);
         model.addAttribute("salarySlips", salarySlips);
-        return "salary/salaries";
+        return "employe/salaries";
     }
 
     @GetMapping("/salaryslip/pdf")
@@ -70,5 +73,27 @@ public class EmployeeSalaryController {
         
         return new ResponseEntity<>(pdfBytes, headers, HttpStatus.OK);
     }
-    
+
+    @GetMapping
+    @RequireErpAuth
+    public String listSalarySlips(
+            @RequestParam(name = "month", required = false) Integer month,
+            @RequestParam(name = "year", required = false) Integer year,
+            Model model) {
+        
+        // Récupérer l'année courante pour le filtre
+        int currentYear = Year.now().getValue();
+        model.addAttribute("currentYear", currentYear);
+        
+        // Construire les filtres
+        Map<String, String> filters = new HashMap<>();
+        if (month != null) filters.put("month", month.toString());
+        if (year != null) filters.put("year", year.toString());
+        
+        // Récupérer les bulletins
+        List<SalarySlipDTO> salarySlips = salarySlipService.findSalarySlipsByMonth(filters);
+        model.addAttribute("salarySlips", salarySlips);
+        
+        return "salary/salaries";
+    }    
 }

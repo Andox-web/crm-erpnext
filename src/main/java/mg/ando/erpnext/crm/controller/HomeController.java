@@ -8,10 +8,15 @@ import mg.ando.erpnext.crm.auth.annotation.RequireErpAuth;
 @Controller
 public class HomeController {
 
-    @GetMapping("/")
+    @GetMapping("/home")
     @RequireErpAuth
     public String home() {
         return "home";
     }
-
+    
+    @GetMapping("/")
+    @RequireErpAuth
+    public String index(){
+        return "redirect:/dashboard";
+    }
 }
