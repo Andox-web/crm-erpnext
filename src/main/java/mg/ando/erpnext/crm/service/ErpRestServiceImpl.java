@@ -1,156 +1,301 @@
 package mg.ando.erpnext.crm.service;
 
-import java.util.List;
-import java.util.Map;
+import java.util.*;
+import java.util.stream.Collectors;
 
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
-import org.springframework.http.HttpEntity;
-import org.springframework.http.HttpHeaders;
-import org.springframework.http.HttpMethod;
-import org.springframework.http.ResponseEntity;
+import org.springframework.http.*;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestTemplate;
-
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.ObjectMapper;
-
 import mg.ando.erpnext.crm.config.Filter;
 
-// ErpRestService.java
 @Service
-public class ErpRestServiceImpl implements ErpRestService{
+public class ErpRestServiceImpl implements ErpRestService {
 
+    // ========== CONSTANTES ==========
+    private static final String DEFAULT_DATA_PATH = "data";
+
+    // ========== CHAMPS ==========
     private final RestTemplate restTemplate;
     private final String apiUrl;
     private final ObjectMapper objectMapper;
 
-    public ErpRestServiceImpl(RestTemplate restTemplate,@Value("${erp.base-url}") String apiUrl, ObjectMapper objectMapper) {
+    // ========== CONSTRUCTEUR ==========
+    public ErpRestServiceImpl(RestTemplate restTemplate,
+                            @Value("${erp.base-url}") String apiUrl,
+                            ObjectMapper objectMapper) {
         this.restTemplate = restTemplate;
         this.apiUrl = apiUrl;
         this.objectMapper = objectMapper;
     }
 
-    // Méthode générique qui retourne l'objet désérialisé
-    public <T> T callErpApi(String endpoint, HttpMethod method, Object requestBody,HttpHeaders httpHeaders ,Class<T> responseType) {
-        ResponseEntity<T> response = callErpApiWithResponse(endpoint, method, requestBody, httpHeaders, responseType);
-        return response.getBody();
+    // ========== METHODES PUBLIQUES ==========
+
+    // ----- Méthodes Class<T> responseType -----
+    @Override
+    public <T> T callApi(String endpoint, HttpMethod method, Object body,
+                        HttpHeaders headers, Class<T> responseType,
+                        String... params) {
+        return callApi(endpoint, method, body, headers, responseType, 
+                      new ApiOptions.Builder().build(), params);
     }
 
-    // Nouvelle méthode qui retourne le ResponseEntity complet
-    public <T> ResponseEntity<T> callErpApiWithResponse(
-            String endpoint,
-            HttpMethod method,
-            Object requestBody,
-            HttpHeaders httpHeaders,
-            Class<T> responseType) {
+    @Override
+    public <T> T callApi(String endpoint, HttpMethod method, Object body,
+                        HttpHeaders headers, Class<T> responseType,
+                        ApiOptions options, String... params) {
+        return handleApiCall(endpoint, method, body, headers,
+                           objectMapper.constructType(responseType),
+                           initOptions(options), params);
+    }
 
-        String url = apiUrl + endpoint;
-        // Ajout du paramètre limit_page_length=1000
-        if (url.contains("?")) {
-            url += "&limit_page_length=10000";
-        } else {
-            url += "?limit_page_length=10000";
-        }
-        
-        HttpEntity<Object> requestEntity = requestBody != null
-                ? new HttpEntity<>(requestBody, httpHeaders)
-                : new HttpEntity<>(httpHeaders);
+    @Override
+    public <T> T callApiWithFilters(String endpoint, HttpMethod method, Object body,
+                                  HttpHeaders headers, String[] fields,
+                                  List<Filter> filters, Class<T> responseType,
+                                  String... params) {
+        return callApiWithFilters(endpoint, method, body, headers, fields,
+                                filters, responseType,
+                                new ApiOptions.Builder().build(), params);
+    }
 
-        if (responseType.equals(String.class)) {
-            ResponseEntity<String> stringResponse = restTemplate.exchange(
-                url,
-                method,
-                requestEntity,
-                String.class
+    @Override
+    public <T> T callApiWithFilters(String endpoint, HttpMethod method, Object body,
+                                  HttpHeaders headers, String[] fields,
+                                  List<Filter> filters, Class<T> responseType,
+                                  ApiOptions options, String... params) {
+        String fullUrl = buildFullUrl(endpoint, fields, filters, params);
+        return callApi(fullUrl, method, body, headers, responseType, options);
+    }
+
+    // ----- Méthodes TypeReference<T> responseType -----
+    @Override
+    public <T> T callApi(String endpoint, HttpMethod method, Object body,
+                        HttpHeaders headers, TypeReference<T> responseType,
+                        String... params) {
+        return callApi(endpoint, method, body, headers, responseType,
+                      new ApiOptions.Builder().build(), params);
+    }
+
+    @Override
+    public <T> T callApi(String endpoint, HttpMethod method, Object body,
+                        HttpHeaders headers, TypeReference<T> responseType,
+                        ApiOptions options, String... params) {
+        return handleApiCall(endpoint, method, body, headers,
+                           objectMapper.constructType(responseType),
+                           initOptions(options), params);
+    }
+
+    @Override
+    public <T> T callApiWithFilters(String endpoint, HttpMethod method, Object body,
+                                  HttpHeaders headers, String[] fields,
+                                  List<Filter> filters, TypeReference<T> responseType,
+                                  String... params) {
+        return callApiWithFilters(endpoint, method, body, headers, fields,
+                                filters, responseType,
+                                new ApiOptions.Builder().build(), params);
+    }
+
+    @Override
+    public <T> T callApiWithFilters(String endpoint, HttpMethod method, Object body,
+                                  HttpHeaders headers, String[] fields,
+                                  List<Filter> filters, TypeReference<T> responseType,
+                                  ApiOptions options, String... params) {
+        String fullUrl = buildFullUrl(endpoint, fields, filters, params);
+        return callApi(fullUrl, method, body, headers, responseType, options);
+    }
+
+    // ----- Méthodes ResponseEntity<T> -----
+    @Override
+    public <T> ResponseEntity<T> callApiWithResponse(
+            String endpoint, HttpMethod method, Object body,
+            HttpHeaders headers, Class<T> responseType,
+            String... params) {
+        return callApiWithResponse(endpoint, method, body, headers,
+                responseType, new ApiOptions.Builder().build(), params);
+    }
+
+    @Override
+    public <T> ResponseEntity<T> callApiWithResponse(
+            String endpoint, HttpMethod method, Object body,
+            HttpHeaders headers, Class<T> responseType,
+            ApiOptions options, String... params) {
+        return handleApiCallWithResponse(endpoint, method, body, headers,
+                objectMapper.constructType(responseType),
+                initOptions(options), params);
+    }
+
+    @Override
+    public <T> ResponseEntity<T> callApiWithResponse(
+            String endpoint, HttpMethod method, Object body,
+            HttpHeaders headers, TypeReference<T> responseType,
+            String... params) {
+        return callApiWithResponse(endpoint, method, body, headers,
+                responseType, new ApiOptions.Builder().build(), params);
+    }
+
+    @Override
+    public <T> ResponseEntity<T> callApiWithResponse(
+            String endpoint, HttpMethod method, Object body,
+            HttpHeaders headers, TypeReference<T> responseType,
+            ApiOptions options, String... params) {
+        return handleApiCallWithResponse(endpoint, method, body, headers,
+                objectMapper.constructType(responseType),
+                initOptions(options), params);
+    }
+
+    // ========== METHODES PRIVEES ==========
+
+    // ----- Méthodes principales de traitement -----
+    private <T> T handleApiCall(String endpoint, HttpMethod method, Object body,
+                              HttpHeaders headers, JavaType responseType,
+                              ApiOptions options, String... params) {
+        String url = buildUrl(endpoint, params);
+        HttpEntity<?> requestEntity = new HttpEntity<>(body, headers);
+
+        if (responseType.getRawClass().equals(String.class)) {
+            ResponseEntity<String> response = restTemplate.exchange(
+                url, method, requestEntity, String.class
             );
-            return (ResponseEntity<T>) ResponseEntity
-                .status(stringResponse.getStatusCode())
-                .headers(stringResponse.getHeaders())
-                .body((T) stringResponse.getBody());
+            return (T) processStringResponse(response, options);
         }
 
-        // 1. Désérialisation dans un type générique
-        ResponseEntity<Map<String, Object>> rawResponse = restTemplate.exchange(
-            url,
-            method,
-            requestEntity,
+        ResponseEntity<Map<String, Object>> response = restTemplate.exchange(
+            url, method, requestEntity,
             new ParameterizedTypeReference<Map<String, Object>>() {}
         );
-        Map<String, Object> responseBody = rawResponse.getBody();
-        
-        // 2. Gestion du cas où 'data' est absent
-        if (responseBody == null || !responseBody.containsKey("data")) {
-            // Aucun traitement spécial - retourne la réponse complète
-            // selon le type demandé par l'appelant
-            ObjectMapper mapper = new ObjectMapper();
-            T fullResponse = mapper.convertValue(responseBody, responseType);
-            
-            return new ResponseEntity<>(
-                fullResponse,
-                rawResponse.getHeaders(),
-                rawResponse.getStatusCode()
+        return processResponse(response, responseType, options);
+    }
+
+    private <T> ResponseEntity<T> handleApiCallWithResponse(
+            String endpoint, HttpMethod method, Object body,
+            HttpHeaders headers, JavaType responseType,
+            ApiOptions options, String... params) {
+        String url = buildUrl(endpoint, params);
+        HttpEntity<?> requestEntity = new HttpEntity<>(body, headers);
+
+        if (responseType.getRawClass().equals(String.class)) {
+            ResponseEntity<String> response = restTemplate.exchange(
+                url, method, requestEntity, String.class
+            );
+            String bodyContent = processStringResponse(response, options);
+            return (ResponseEntity<T>) new ResponseEntity<>(
+                bodyContent,
+                response.getHeaders(),
+                response.getStatusCode()
             );
         }
 
-        // 3. Extraction et conversion du champ 'data'
-        Object data = responseBody.get("data");
-        T result = objectMapper.convertValue(data, objectMapper.getTypeFactory().constructType(responseType));
+        ResponseEntity<Map<String, Object>> rawResponse = restTemplate.exchange(
+                url, method, requestEntity,
+                new ParameterizedTypeReference<Map<String, Object>>() {}
+        );
 
+        T bodyContent = processResponse(rawResponse, responseType, options);
         return new ResponseEntity<>(
-            result,
-            rawResponse.getHeaders(),
-            rawResponse.getStatusCode()
+                bodyContent,
+                rawResponse.getHeaders(),
+                rawResponse.getStatusCode()
         );
     }
-    public <T> T callErpApiWithFieldAndFilter(
-            String endpoint, 
-            HttpMethod method, 
-            Object requestBody,
-            HttpHeaders httpHeaders, 
-            String[] fields, 
-            List<Filter> filters,
-            Class<T> responseType) {
 
-        // Construire l'URL avec les paramètres
-        StringBuilder urlBuilder = new StringBuilder(endpoint);
-        
-        // Ajouter les paramètres s'ils existent
-        if (fields != null || filters != null) {
-            urlBuilder.append("?");
+    // ----- Méthodes de traitement de la réponse -----
+    private String processStringResponse(ResponseEntity<String> response, ApiOptions options) {
+        if (Boolean.TRUE.equals(options.getReturnFullResponse())) {
+            return response.getBody();
         }
-        
-        // Ajouter les champs
-        if (fields != null && fields.length > 0) {
-            urlBuilder.append("fields=[");
-            for (int i = 0; i < fields.length; i++) {
-                urlBuilder.append("\"").append(fields[i]).append("\"");
-                if (i < fields.length - 1) {
-                    urlBuilder.append(",");
-                }
-            }
-            urlBuilder.append("]");
-        }
-        
-        // Ajouter les filtres
-        if (filters != null && !filters.isEmpty()) {
-            // Ajouter un séparateur si des champs sont déjà présents
-            if (fields != null && fields.length > 0) {
-                urlBuilder.append("&");
-            }
+
+        try {
+            Map<String, Object> responseMap = objectMapper.readValue(response.getBody(), 
+                new TypeReference<Map<String, Object>>() {});
             
-            urlBuilder.append("filters=[");
-            int count = 0;
-            for (Filter entry : filters) {
-                urlBuilder.append(entry.toJson());
-                
-                if (count < filters.size() - 1) {
-                    urlBuilder.append(",");
-                }
-                count++;
+            Object data = extractData(responseMap, options.getDataPath());
+            if (data != null) {
+                return objectMapper.writeValueAsString(data);
             }
-            urlBuilder.append("]");
+            return response.getBody();
+        } catch (Exception e) {
+            return response.getBody();
+        }
+    }
+    
+    private <T> T processResponse(ResponseEntity<Map<String, Object>> response,
+                                JavaType responseType, ApiOptions options) {
+        Map<String, Object> responseBody = response.getBody();
+
+        if (Boolean.TRUE.equals(options.getReturnFullResponse())) {
+            return objectMapper.convertValue(responseBody, responseType);
+        }
+
+        Object data = extractData(responseBody, options.getDataPath());
+        return objectMapper.convertValue(data != null ? data : responseBody, responseType);
+    }
+
+    private Object extractData(Map<String, Object> responseBody, String dataPath) {
+        if (dataPath == null || dataPath.isEmpty() || responseBody == null) {
+            return responseBody;
+        }
+
+        String[] paths = dataPath.split("\\.");
+        Object current = responseBody;
+
+        for (String path : paths) {
+            if (!(current instanceof Map)) return null;
+            current = ((Map<?, ?>) current).get(path);
+            if (current == null) return null;
+        }
+
+        return current;
+    }
+
+    // ----- Méthodes de construction d'URL -----
+    private String buildUrl(String endpoint, String... params) {
+        String baseUrl = apiUrl + endpoint;
+        String queryParams = params.length > 0 ? "&" + String.join("&", params) : "";
+        return baseUrl + (baseUrl.contains("?") ? "&" : "?") + queryParams;
+    }
+
+    private String buildFullUrl(String endpoint, String[] fields,
+                              List<Filter> filters, String... params) {
+        StringBuilder url = new StringBuilder(endpoint).append("?");
+        
+        if (fields != null && fields.length > 0) {
+            url.append("fields=[")
+               .append(Arrays.stream(fields)
+                      .map(f -> "\"" + f + "\"")
+                      .collect(Collectors.joining(",")))
+               .append("]");
+        }
+
+        if (filters != null && !filters.isEmpty()) {
+            if (fields != null && fields.length > 0) url.append("&");
+            url.append("filters=[")
+               .append(filters.stream()
+                      .map(Filter::toJson)
+                      .collect(Collectors.joining(",")))
+               .append("]");
+        }
+
+        if (params.length > 0) {
+            url.append("&").append(String.join("&", params));
+        }
+
+        return url.toString();
+    }
+
+    // ----- Méthodes utilitaires -----
+    private ApiOptions initOptions(ApiOptions options) {
+        if (options == null) {
+            return new ApiOptions.Builder().build();
         }
         
-        return callErpApi(urlBuilder.toString(), method, requestBody, httpHeaders, responseType);
+        return new ApiOptions.Builder()
+                .dataPath(options.getDataPath() != null ? options.getDataPath() : DEFAULT_DATA_PATH)
+                .returnFullResponse(options.getReturnFullResponse() != null ? options.getReturnFullResponse() : false)
+                .build();
     }
 }

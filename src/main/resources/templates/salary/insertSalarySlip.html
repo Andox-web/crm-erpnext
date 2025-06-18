@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html layout:decorate="~{template}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Insertion de bulletin de salaire</title>
+    <style>
+        .salary-form {
+            max-width: 800px;
+            margin: 0 auto;
+            padding: var(--content-padding);
+        }
+        
+        .form-card {
+            border-radius: var(--border-radius);
+            box-shadow: var(--box-shadow);
+            border: none;
+        }
+        
+        .form-header {
+            background-color: var(--primary-color);
+            color: var(--light-color);
+            border-radius: var(--border-radius) var(--border-radius) 0 0 !important;
+            padding: 15px 20px;
+        }
+        
+        .form-body {
+            padding: 25px;
+        }
+        
+        .form-label {
+            color: var(--secondary-color);
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+        
+        .form-control, .form-select {
+            border-radius: calc(var(--border-radius) - 2px);
+            border: 1px solid var(--medium-color);
+            padding: 10px 15px;
+            transition: all var(--transition-duration) var(--transition-timing);
+        }
+        
+        .form-control:focus, .form-select:focus {
+            border-color: var(--accent-color);
+            box-shadow: 0 0 0 0.25rem rgba(52, 152, 219, 0.25);
+        }
+        
+        .submit-btn {
+            background-color: var(--primary-color);
+            border: none;
+            padding: 10px 25px;
+            border-radius: var(--border-radius);
+            color: var(--light-color);
+            transition: all var(--transition-duration) var(--transition-timing);
+        }
+        
+        .submit-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+        
+        .invalid-feedback {
+            color: var(--danger-color);
+        }
+        
+        .was-validated .form-control:invalid,
+        .was-validated .form-select:invalid {
+            border-color: var(--danger-color);
+        }
+        
+        .was-validated .form-control:valid,
+        .was-validated .form-select:valid {
+            border-color: var(--success-color);
+        }
+        
+        .input-group-text {
+            background-color: var(--light-color);
+            color: var(--secondary-color);
+        }
+    </style>
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="salary-form">
+            <!-- Message d'état -->
+            <div th:if="${message}" class="alert-message" 
+                 th:style="${message.startsWith('Erreur')} ? 
+                 'background-color: var(--danger-color); color: var(--light-color)' : 
+                 'background-color: var(--success-color); color: var(--light-color)'">
+                [[${message}]]
+            </div>
+            
+            <!-- Carte du formulaire -->
+            <div class="form-card">
+                <div class="form-header">
+                    <h2 style="margin: 0; font-size: var(--font-size-xlarge)">Nouveau bulletin de salaire</h2>
+                </div>
+                <div class="form-body">
+                    <form th:action="@{/insertSalarySlip}" method="post" class="needs-validation" novalidate>
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 20px;">
+                            <!-- Employé -->
+                            <div>
+                                <label for="employee_name" class="form-label">Employé</label>
+                                <select class="form-select" name="employee_name" id="employee_name" required>
+                                    <option value="" selected disabled>Sélectionnez un employé</option>
+                                    <option th:each="employe: ${employees}" 
+                                            th:value="${employe.name}" 
+                                            th:text="${employe.employeeName}"></option>
+                                </select>
+                                <div class="invalid-feedback">
+                                    Veuillez sélectionner un employé.
+                                </div>
+                            </div>
+                            
+                            <!-- Salaire de base -->
+                            <div>
+                                <label for="base" class="form-label">Salaire de base</label>
+                                <div style="display: flex;">
+                                    <input type="number" class="form-control" id="base" 
+                                           name="base" placeholder="0.00" min="0" step="0.01"
+                                           style="border-top-right-radius: 0; border-bottom-right-radius: 0;">
+            
+                                </div>
+                                <div class="invalid-feedback">
+                                    Veuillez entrer un montant valide.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px; margin-bottom: 30px;">
+                            <!-- Période -->
+                            <div>
+                                <label for="dateDebut" class="form-label">Date de début</label>
+                                <input type="date" class="form-control" id="dateDebut" 
+                                       name="dateDebut" required>
+                                <div class="invalid-feedback">
+                                    Veuillez sélectionner une date de début.
+                                </div>
+                            </div>
+                            
+                            <div>
+                                <label for="dateFin" class="form-label">Date de fin</label>
+                                <input type="date" class="form-control" id="dateFin" 
+                                       name="dateFin" required>
+                                <div class="invalid-feedback">
+                                    Veuillez sélectionner une date de fin.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div style="text-align: right;">
+                            <button type="submit" class="submit-btn">
+                                <i class="fas fa-save" style="margin-right: 8px;"></i>Enregistrer
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Script de validation -->
+        <script>
+            (function() {
+                'use strict';
+                
+                // Validation des champs
+                var forms = document.querySelectorAll('.needs-validation');
+                
+                Array.prototype.slice.call(forms).forEach(function(form) {
+                    form.addEventListener('submit', function(event) {
+                        if (!form.checkValidity()) {
+                            event.preventDefault();
+                            event.stopPropagation();
+                        }
+                        
+                        form.classList.add('was-validated');
+                    }, false);
+                });
+                
+                // Validation des dates
+                document.getElementById('dateFin').addEventListener('change', function() {
+                    const dateDebut = document.getElementById('dateDebut');
+                    const dateFin = this;
+                    
+                    if (new Date(dateDebut.value) > new Date(dateFin.value)) {
+                        dateFin.setCustomValidity('La date de fin doit être postérieure à la date de début');
+                    } else {
+                        dateFin.setCustomValidity('');
+                    }
+                });
+            })();
+        </script>
+    </div>
+</body>
+</html>

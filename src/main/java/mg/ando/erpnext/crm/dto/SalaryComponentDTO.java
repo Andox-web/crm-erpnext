@@ -6,9 +6,11 @@ import lombok.Data;
 
 @Data
 public class SalaryComponentDTO {
+    
     @JsonProperty("salary_component")
     private String salaryComponent;
 
+    @JsonProperty("salary_component_abbr")
     private String abbr;
     
     private String type;

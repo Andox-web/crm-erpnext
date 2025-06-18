@@ -10,6 +10,7 @@ import java.util.Map;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 
+import mg.ando.erpnext.crm.config.Filter;
 import mg.ando.erpnext.crm.dto.SalaryComponentDTO;
 import mg.ando.erpnext.crm.service.ErpRestService;
 
@@ -23,10 +24,8 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
     private static final String[] DEFAULT_FIELDS = {
         "name",
         "salary_component",
-        "abbr",
-        "type",
-        "is_tax_applicable",
-        "variable_based_on_taxable_salary"
+        "salary_component_abbr",
+        "type"
     };
 
     public SalaryComponentServiceImpl(ErpRestService erpRestService) {
@@ -36,7 +35,7 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
     @Override
     public SalaryComponentDTO getSalaryComponentByName(String name) {
         String endpoint = SALARY_COMPONENT_ENDPOINT + "/" + name;
-        return erpRestService.callErpApi(
+        return erpRestService.callApi(
             endpoint,
             HttpMethod.GET,
             null,
@@ -47,14 +46,15 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
 
     @Override
     public List<SalaryComponentDTO> getAllSalaryComponents() {
-        SalaryComponentDTO[] result = erpRestService.callErpApiWithFieldAndFilter(
+        SalaryComponentDTO[] result = erpRestService.callApiWithFilters(
             SALARY_COMPONENT_ENDPOINT,
             HttpMethod.GET,
             null,
             null,
             DEFAULT_FIELDS,
             null,
-            SalaryComponentDTO[].class
+            SalaryComponentDTO[].class,
+            "limit_page_length=10000"
         );
         
         return result != null ? Arrays.asList(result) : Collections.emptyList();
@@ -64,7 +64,7 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
     public void createSalaryComponent(SalaryComponentDTO salaryComponentDTO) {
         Map<String, Object> requestBody = buildSalaryComponentBody(salaryComponentDTO);
         
-        erpRestService.callErpApi(
+        erpRestService.callApi(
             SALARY_COMPONENT_ENDPOINT,
             HttpMethod.POST,
             requestBody,
@@ -84,7 +84,7 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
             Map<String, Object> componentMap = new HashMap<>();
             componentMap.put("doctype", "Salary Component");
             componentMap.put("salary_component", dto.getSalaryComponent());
-            componentMap.put("abbr", dto.getAbbr());
+            componentMap.put("salary_component_abbr", dto.getAbbr());
             componentMap.put("type", dto.getType());
             docs.add(componentMap);
         }
@@ -93,7 +93,7 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
         requestBody.put("docs", docs);
 
         try {
-            Map<String, Object> response = erpRestService.callErpApi(
+            Map<String, Object> response = erpRestService.callApi(
                 "/api/method/frappe.client.insert_many",
                 HttpMethod.POST,
                 requestBody,
@@ -115,7 +115,7 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
     @Override
     public void deleteSalaryComponent(String name) {
         String endpoint = SALARY_COMPONENT_ENDPOINT + "/" + name;
-        erpRestService.callErpApi(
+        erpRestService.callApi(
             endpoint,
             HttpMethod.DELETE,
             null,
@@ -150,5 +150,20 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
         doc.put("abbr", dto.getAbbr());
         doc.put("type", dto.getType());
         return doc;
+    }
+
+    @Override
+    public List<SalaryComponentDTO> getWithFilters(List<Filter> filters) {
+        SalaryComponentDTO[] result = erpRestService.callApiWithFilters(
+            SALARY_COMPONENT_ENDPOINT,
+            HttpMethod.GET,
+            null,
+            null,
+            DEFAULT_FIELDS,
+            filters,
+            SalaryComponentDTO[].class,
+            "limit_page_length=10000"
+        );
+        return result != null ? Arrays.asList(result) : Collections.emptyList();
     }
 }

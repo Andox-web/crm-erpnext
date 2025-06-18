@@ -54,4 +54,25 @@ public class SalarySlipDTO {
     
     private List<SalaryDetailDTO> earnings = new ArrayList<>();
     private List<SalaryDetailDTO> deductions = new ArrayList<>();;
+    @Override
+    public String toString() {
+        return "SalarySlipDTO{" +
+                "name='" + name + '\'' +
+                ", employee='" + employee + '\'' +
+                ", employeeName='" + employeeName + '\'' +
+                ", startDate='" + startDate + '\'' +
+                ", endDate='" + endDate + '\'' +
+                ", company='" + company + '\'' +
+                ", currency='" + currency + '\'' +
+                ", grossPay=" + grossPay +
+                ", netPay=" + netPay +
+                ", status='" + status + '\'' +
+                ", salaryStructure='" + salaryStructure + '\'' +
+                ", totalDeduction=" + totalDeduction +
+                ", roundedTotal=" + roundedTotal +
+                ", totalInWords='" + totalInWords + '\'' +
+                ", earnings=" + earnings +
+                ", deductions=" + deductions +
+                '}';
+    }
 }

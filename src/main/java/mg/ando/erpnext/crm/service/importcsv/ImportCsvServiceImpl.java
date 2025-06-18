@@ -77,8 +77,8 @@ public class ImportCsvServiceImpl implements ImportCsvService {
                 if (employes.containsKey(employe.getEmployeeNumber())) {
                     throw new ImportCsvException("L'employé avec le ref " + employe.getEmployeeNumber() + " existe déjà.");
                 }
-                employe.setFirstName(record.get("Nom"));
-                employe.setLastName(record.get("Prenom"));
+                employe.setFirstName(record.get("Prenom"));
+                employe.setLastName(record.get("Nom"));
                 employe.setGender(GenderNormalizer.normalizeGender(record.get("genre")));
                 employe.setDateOfJoining(DateConverter.convertToIsoDate(record.get("Date embauche"))); 
                 employe.setDateOfBirth(DateConverter.convertToIsoDate(record.get("date naissance")));
@@ -280,7 +280,7 @@ public class ImportCsvServiceImpl implements ImportCsvService {
         requestBody.put("salary_slips", objectMapper.writeValueAsString(sortedSalarySlips));
 
         try {
-            JsonNode response =  erpRestService.callErpApi(
+            JsonNode response =  erpRestService.callApi(
                 "/api/method/hrms.api.importData.import_data",
                 HttpMethod.POST,
                 requestBody,

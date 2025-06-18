@@ -1,5 +1,6 @@
 package mg.ando.erpnext.crm.service.employe;
 
+import mg.ando.erpnext.crm.config.Filter;
 import mg.ando.erpnext.crm.dto.CompanyDTO;
 
 import java.util.List;
@@ -11,4 +12,5 @@ public interface CompanyService {
     int createAllCompanies(List<CompanyDTO> companyDTOs);
     void deleteCompany(String name);
     int deleteAllCompanies(List<String> companyNames);
+    List<CompanyDTO> getWithFilters(List<Filter> filters);
 }

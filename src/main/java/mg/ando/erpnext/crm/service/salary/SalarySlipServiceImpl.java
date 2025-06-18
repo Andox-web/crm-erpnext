@@ -1,21 +1,28 @@
 package mg.ando.erpnext.crm.service.salary;
 
+import java.time.LocalDate;
 import java.time.Year;
 import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import mg.ando.erpnext.crm.config.Filter;
 import mg.ando.erpnext.crm.dto.MonthSalaryDetail;
 import mg.ando.erpnext.crm.dto.MonthSalarySlip;
+import mg.ando.erpnext.crm.dto.SalaryAssignmentDTO;
 import mg.ando.erpnext.crm.dto.SalaryDetailDTO;
 import mg.ando.erpnext.crm.dto.SalarySlipDTO;
 import mg.ando.erpnext.crm.service.ErpRestService;
@@ -25,7 +32,7 @@ public class SalarySlipServiceImpl implements SalarySlipService {
 
     private final ErpRestService erpRestService;
     private static final String SALARY_SLIP_ENDPOINT = "/api/resource/Salary Slip";
-
+    private SalaryAssignmentService salaryAssignmentService;
     // Champs par défaut pour les Salary Slips
     private static final String[] DEFAULT_FIELDS = {
         "name",
@@ -44,14 +51,15 @@ public class SalarySlipServiceImpl implements SalarySlipService {
         "rounded_total"
     };
 
-    public SalarySlipServiceImpl(ErpRestService erpRestService) {
+    public SalarySlipServiceImpl(ErpRestService erpRestService,SalaryAssignmentService salaryAssignmentService) {
         this.erpRestService = erpRestService;
+        this.salaryAssignmentService =salaryAssignmentService;
     }
 
     @Override
     public SalarySlipDTO getSalarySlipByName(String name) {
         String endpoint = SALARY_SLIP_ENDPOINT + "/" + name;
-        return erpRestService.callErpApi(
+        return erpRestService.callApi(
             endpoint,
             HttpMethod.GET,
             null,
@@ -66,48 +74,50 @@ public class SalarySlipServiceImpl implements SalarySlipService {
         List<Filter> filters = new ArrayList<>();
         filters.add(new Filter("employee", "=", employeeName));
 
-        SalarySlipDTO[] result = erpRestService.callErpApiWithFieldAndFilter(
+        SalarySlipDTO[] result = erpRestService.callApiWithFilters(
             SALARY_SLIP_ENDPOINT,
             HttpMethod.GET,
             null,
             headers,
             DEFAULT_FIELDS,
             filters,
-            SalarySlipDTO[].class
+            SalarySlipDTO[].class,
+            "limit_page_length=10000"
         );
 
         return result != null ? List.of(result) : Collections.emptyList();
     }
     @Override
     public List<SalarySlipDTO> getAllSalarySlips() {
-        SalarySlipDTO[] result = erpRestService.callErpApiWithFieldAndFilter(
+        SalarySlipDTO[] result = erpRestService.callApiWithFilters(
             SALARY_SLIP_ENDPOINT,
             HttpMethod.GET,
             null,
             null,
             DEFAULT_FIELDS,
             null,
-            SalarySlipDTO[].class
+            SalarySlipDTO[].class,
+            "limit_page_length=10000"
         );
         
         return result != null ? Arrays.asList(result) : Collections.emptyList();
     }
 
     @Override
-    public void createSalarySlip(SalarySlipDTO salarySlipDTO) {
-        erpRestService.callErpApi(
+    public SalarySlipDTO createSalarySlip(SalarySlipDTO salarySlipDTO) {
+        return erpRestService.callApi(
             SALARY_SLIP_ENDPOINT,
             HttpMethod.POST,
             salarySlipDTO,
             null,
-            Object.class
+            SalarySlipDTO.class
         );
     }
 
     @Override
-    public int createAllSalarySlips(List<SalarySlipDTO> salarySlipDTOs) {
+    public List<SalarySlipDTO> createAllSalarySlips(List<SalarySlipDTO> salarySlipDTOs) {
         if (salarySlipDTOs == null || salarySlipDTOs.isEmpty()) {
-            return 0;
+            return new ArrayList<>();
         }
 
         List<Map<String, Object>> docs = new ArrayList<>();
@@ -118,6 +128,7 @@ public class SalarySlipServiceImpl implements SalarySlipService {
             slipMap.put("employee", dto.getEmployee());
             slipMap.put("employee_name", dto.getEmployeeName());
             slipMap.put("start_date", dto.getStartDate());
+            slipMap.put("end_date",dto.getEndDate());
             slipMap.put("company", dto.getCompany());
             slipMap.put("salary_structure", dto.getSalaryStructure());
             docs.add(slipMap);
@@ -127,18 +138,23 @@ public class SalarySlipServiceImpl implements SalarySlipService {
         requestBody.put("docs", docs);
 
         try {
-            Map<String, Object> response = erpRestService.callErpApi(
+            TypeReference<List<String>> typeRef = new TypeReference<>() {};
+            List<String> names = erpRestService.callApi(
                 "/api/method/frappe.client.insert_many",
                 HttpMethod.POST,
                 requestBody,
                 null,
-                Map.class
+                typeRef,
+                ErpRestService.ApiOptions.builder().dataPath("message").build()
             );
 
-            if (response != null && response.containsKey("message")) {
-                List<?> resultList = (List<?>) response.get("message");
-                return resultList.size();
+            // Puis récupérer les vrais DTOs à partir de leur `name`
+            List<SalarySlipDTO> result = new ArrayList<>();
+            for (String name : names) {
+                result.add(getSalarySlipByName(name)); // à toi d’avoir une méthode getByName équivalente
             }
+            return result;
+
         } catch (Exception e) {
             System.err.println("Erreur création en masse des bulletins : " + e.getMessage());
         }
@@ -149,7 +165,7 @@ public class SalarySlipServiceImpl implements SalarySlipService {
     @Override
     public void deleteSalarySlip(String name) {
         String endpoint = SALARY_SLIP_ENDPOINT + "/" + name;
-        erpRestService.callErpApi(
+        erpRestService.callApi(
             endpoint,
             HttpMethod.DELETE,
             null,
@@ -205,14 +221,15 @@ public class SalarySlipServiceImpl implements SalarySlipService {
             filters.add(new Filter("end_date", "<=", yearMonth.atEndOfMonth().toString()));
         }
         
-        SalarySlipDTO[] result = erpRestService.callErpApiWithFieldAndFilter(
+        SalarySlipDTO[] result = erpRestService.callApiWithFilters(
             SALARY_SLIP_ENDPOINT,
             HttpMethod.GET,
             null,
             null,
             DEFAULT_FIELDS,
             filters,
-            SalarySlipDTO[].class
+            SalarySlipDTO[].class,
+            "limit_page_length=10000"
         );
         System.out.println(result.length);
         return result != null ? Arrays.asList(result) : Collections.emptyList();
@@ -399,5 +416,163 @@ public class SalarySlipServiceImpl implements SalarySlipService {
             }
         }
         return new ArrayList<>(detailMap.values());
+    }
+    private static final String SALARY_ASSIGNEMENT_ENDPOINT = "/api/resource/Salary Structure Assignment";
+    private static final String[] SALARY_ASSIGN_DEFAULT_FIELDS = {
+        "name",
+        "employee",
+        "employee_name",
+        "company",
+        "salary_structure",
+        "base",
+        "variable",
+        "from_date",
+        "currency"
+     } ;
+    @Override
+    public void insertSalarySlipForEmployeInPeriod(String employeeName, LocalDate dateDebut, LocalDate dateFin,
+            String SalaireBase) {
+        if (dateDebut.isAfter(dateFin)) {
+            throw new RuntimeException("debut > fin");
+        }
+        Double base;
+        List<Filter> filters = new ArrayList<>();
+        filters.add(new Filter("from_date", "<=", dateDebut.toString()));
+        filters.add(new Filter("employee", "=",employeeName));
+
+        SalaryAssignmentDTO[] result = erpRestService.callApiWithFilters(
+            SALARY_ASSIGNEMENT_ENDPOINT,
+            HttpMethod.GET,
+            null,
+            null,
+            SALARY_ASSIGN_DEFAULT_FIELDS,
+            filters,
+            SalaryAssignmentDTO[].class,
+            "limit_page_length=10000"
+        );
+
+        if (result.length<=0) {
+            throw new RuntimeException("l'employee "+employeeName +"n a aucun salary slip avant les dates donnee");
+        }
+        SalaryAssignmentDTO baseSalaryAssign = result[0];
+        LocalDate baseCurrentDate = LocalDate.parse(baseSalaryAssign.getFromDate(),DateTimeFormatter.ISO_DATE);
+        if (result.length > 1) {
+            for (int i = 1; i < result.length; i++) {
+                SalaryAssignmentDTO currentSalarySlip = result[i];
+                LocalDate currentstartDate = LocalDate.parse(currentSalarySlip.getFromDate(),DateTimeFormatter.ISO_DATE);
+                if(currentstartDate.isAfter(baseCurrentDate)){
+                    baseCurrentDate = currentstartDate;
+                    baseSalaryAssign = currentSalarySlip;
+                }
+            }
+        }
+        String structure = baseSalaryAssign.getSalaryStructure();
+        if (SalaireBase==null || SalaireBase.isEmpty()) {
+            base = baseSalaryAssign.getBase();
+        } else base = Double.parseDouble(SalaireBase);
+        
+        Set<YearMonth> usedYearMonth = new HashSet<>() ;
+        List<Filter> filterSlip = new ArrayList<>();
+        filterSlip.add(new Filter("end_date", "<=", dateFin.toString()));
+        filterSlip.add(new Filter("start_date", ">=",dateDebut.toString()));
+        filterSlip.add(new Filter("employee", "=",employeeName));
+
+        SalarySlipDTO[] slipIn = erpRestService.callApiWithFilters(
+            SALARY_SLIP_ENDPOINT,
+            HttpMethod.GET,
+            null,
+            null,
+            DEFAULT_FIELDS,
+            filterSlip,
+            SalarySlipDTO[].class,
+            "limit_page_length=10000"
+        );
+
+        for (int index = 0; index < slipIn.length; index++) {
+            LocalDate date = LocalDate.parse(slipIn[index].getStartDate(),DateTimeFormatter.ISO_DATE);
+            usedYearMonth.add(YearMonth.of(date.getYear(), date.getMonthValue())) ;      
+        }
+        YearMonth  currentYearMonth =  YearMonth.of(dateDebut.getYear(), dateDebut.getMonthValue());
+        YearMonth endYearMonth = YearMonth.of(dateFin.getYear(), dateFin.getMonthValue());
+        
+        List<SalaryAssignmentDTO> lSalaryAssignmentDTOs =  new ArrayList<>();
+        List<SalarySlipDTO> lSalarySlipDTOs = new ArrayList<>();
+        while (currentYearMonth.isBefore(endYearMonth) || currentYearMonth.equals(endYearMonth)) {
+            System.out.println(currentYearMonth);
+            if(!usedYearMonth.contains(currentYearMonth)){
+                SalaryAssignmentDTO salaryAssignmentDTO = new SalaryAssignmentDTO();
+                salaryAssignmentDTO.setBase(base);
+                salaryAssignmentDTO.setEmployee(employeeName);
+                salaryAssignmentDTO.setFromDate(currentYearMonth.atDay(1).toString());
+                salaryAssignmentDTO.setToDate(currentYearMonth.atEndOfMonth().toString());
+                salaryAssignmentDTO.setSalaryStructure(structure);
+
+                lSalaryAssignmentDTOs.add(salaryAssignmentDTO);
+
+                SalarySlipDTO salarySlipDTO = new SalarySlipDTO();
+                salarySlipDTO.setEmployee(employeeName);
+                salarySlipDTO.setStartDate(currentYearMonth.atDay(1).toString());
+                salarySlipDTO.setEndDate(currentYearMonth.atEndOfMonth().toString());
+                salarySlipDTO.setSalaryStructure(structure);
+
+                lSalarySlipDTOs.add(salarySlipDTO);
+            }    
+            currentYearMonth = currentYearMonth.plusMonths(1);
+        }
+        List<SalaryAssignmentDTO> salaryAssignmentDTOs = salaryAssignmentService.createAll(lSalaryAssignmentDTOs);
+        for (SalaryAssignmentDTO salaryAssignmentDTO : salaryAssignmentDTOs) {
+            salaryAssignmentService.submit(salaryAssignmentDTO);
+        }
+
+        List<SalarySlipDTO> salarySlipDTOs = createAllSalarySlips(lSalarySlipDTOs);
+        for (SalarySlipDTO salarySlipDTO : salarySlipDTOs) {
+            submit(salarySlipDTO);
+        }
+    }
+
+    @Override
+    public boolean cancel(SalarySlipDTO salarySlipDTO) {
+        try {
+             erpRestService.callApiWithResponse(SALARY_SLIP_ENDPOINT+"/"+salarySlipDTO.getName()
+            , HttpMethod.POST, 
+             null,
+             null,
+              Void.class, "run_method=cancel");
+              return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public boolean submit(SalarySlipDTO salarySlipDTO) {
+        try {
+            erpRestService.callApiWithResponse(SALARY_SLIP_ENDPOINT+"/"+salarySlipDTO.getName()
+            , HttpMethod.POST, 
+             null,
+             null,
+              Void.class, "run_method=submit");
+              return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public List<SalarySlipDTO> getWithFilters(List<Filter> filters) {
+        
+        SalarySlipDTO[] result = erpRestService.callApiWithFilters(
+            SALARY_SLIP_ENDPOINT,
+            HttpMethod.GET,
+            null,
+            null,
+            DEFAULT_FIELDS,
+            filters,
+            SalarySlipDTO[].class,
+            "limit_page_length=10000"
+        );
+        return result != null ? Arrays.asList(result) : Collections.emptyList();
     }
 }

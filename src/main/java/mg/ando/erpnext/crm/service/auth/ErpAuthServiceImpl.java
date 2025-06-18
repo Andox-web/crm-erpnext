@@ -30,7 +30,7 @@ public class ErpAuthServiceImpl implements ErpAuthService{
 
     public boolean isSessionValid() {
         try {
-            ResponseEntity<String> response = erpRestService.callErpApiWithResponse(validateUrl, HttpMethod.GET, null,null, String.class);
+            ResponseEntity<String> response = erpRestService.callApiWithResponse(validateUrl, HttpMethod.GET, null,null, String.class);
             return response.getStatusCode().is2xxSuccessful()
                 && response.getBody() != null
                 && !response.getBody().contains("Logged out");
@@ -50,7 +50,7 @@ public class ErpAuthServiceImpl implements ErpAuthService{
             String encodedBody = "usr=" + username + 
                             "&pwd=" + password;
             
-            ResponseEntity<Map> response = erpRestService.callErpApiWithResponse(
+            ResponseEntity<Map> response = erpRestService.callApiWithResponse(
                 loginUrl,
                 HttpMethod.POST,
                 encodedBody,
@@ -86,7 +86,7 @@ public class ErpAuthServiceImpl implements ErpAuthService{
     
     public void logout() {
         try {
-            erpRestService.callErpApiWithResponse(logoutUrl ,HttpMethod.GET,null, null,String.class);
+            erpRestService.callApiWithResponse(logoutUrl ,HttpMethod.GET,null, null,String.class);
         } catch (Exception e) {
             System.out.println("ERPNext logout error: " + e.getMessage());
         }

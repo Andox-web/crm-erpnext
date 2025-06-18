@@ -670,9 +670,9 @@
 
                     row.innerHTML = `
                         <td>${key}</td>
-                        <td>${slip.grossPay.toFixed(2)}</td>
-                        <td>${slip.netPay.toFixed(2)}</td>
-                        <td>${slip.totalDeduction.toFixed(2)}</td>
+                        <td onclick="window.location.href='/salaries?month=${parseInt(month)}&year=${year}'" >${slip.grossPay.toFixed(2)}</td>
+                        <td onclick="window.location.href='/salaries?month=${parseInt(month)}&year=${year}'">${slip.netPay.toFixed(2)}</td>
+                        <td onclick="window.location.href='/salaries?month=${parseInt(month)}&year=${year}'">${slip.totalDeduction.toFixed(2)}</td>
                         <td>${slip.roundedTotal.toFixed(2)}</td>
                         <td>
                             <button onclick="showComponent('${slip.yearMonth}')">Voir Composant</button>
@@ -695,7 +695,113 @@
                 }
                 return color;
             }
+            // let combinedChart = null;
 
+        // function loadCombinedChart(datasalary, datadetail) {
+        //     console.log('Initialisation graphique combiné', datasalary, datadetail);
+
+        //     // Si un chart existe déjà, on le détruit
+        //     if (combinedChart !== null) {
+        //         combinedChart.destroy();
+        //     }
+
+        //     // --- Préparer les labels communs (mois) ---
+
+        //     const labelSet = new Set();
+
+        //     // Ajouter les labels du salaire
+        //     for (const key in datasalary) {
+        //         labelSet.add(key);
+        //     }
+
+        //     // Ajouter les labels du détail
+        //     for (const component in datadetail) {
+        //         for (const ym in datadetail[component]) {
+        //             labelSet.add(ym);
+        //         }
+        //     }
+
+        //     // Labels triés (mois/année)
+        //     const sortedLabels = Array.from(labelSet).sort();
+
+        //     // --- Préparer les datasets ---
+
+        //     const datasets = [];
+
+        //     // Courbes salaire
+        //     const grossPayData = sortedLabels.map(key => datasalary[key]?.grossPay || 0);
+        //     const netPayData = sortedLabels.map(key => datasalary[key]?.netPay || 0);
+        //     const totalDeductionData = sortedLabels.map(key => datasalary[key]?.totalDeduction || 0);
+
+        //     datasets.push({
+        //         label: 'Salaire Brut',
+        //         data: grossPayData,
+        //         borderColor: 'blue',
+        //         fill: false,
+        //         tension: 0.1
+        //     });
+
+        //     datasets.push({
+        //         label: 'Salaire Net',
+        //         data: netPayData,
+        //         borderColor: 'green',
+        //         fill: false,
+        //         tension: 0.1
+        //     });
+
+        //     datasets.push({
+        //         label: 'Déductions',
+        //         data: totalDeductionData,
+        //         borderColor: 'red',
+        //         fill: false,
+        //         tension: 0.1
+        //     });
+
+        //     // Courbes composants du détail
+        //     for (const component in datadetail) {
+        //         const componentData = sortedLabels.map(ym => {
+        //             return datadetail[component][ym]?.amount || 0;
+        //         });
+
+        //         datasets.push({
+        //             label: component,
+        //             data: componentData,
+        //             borderColor: getRandomColor(),
+        //             fill: false,
+        //             tension: 0.1
+        //         });
+        //     }
+
+        //     // --- Création du graphique ---
+
+        //     const ctx = document.getElementById('combinedChart').getContext('2d');
+
+        //     combinedChart = new Chart(ctx, {
+        //         type: 'line',
+        //         data: {
+        //             labels: sortedLabels,
+        //             datasets: datasets
+        //         },
+        //         options: {
+        //             responsive: true,
+        //             plugins: {
+        //                 title: {
+        //                     display: true,
+        //                     text: 'Salaire + Détail des composants'
+        //                 },
+        //                 tooltip: {
+        //                     enabled: true,
+        //                     intersect: false
+        //                 }
+        //             },
+        //             scales: {
+        //                 y: {
+        //                     beginAtZero: true
+        //                 }
+        //             }
+        //         }
+        //     });
+        // }
         </script>
     </div>
 </body>

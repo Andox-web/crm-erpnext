@@ -10,6 +10,7 @@ import java.util.Map;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 
+import mg.ando.erpnext.crm.config.Filter;
 import mg.ando.erpnext.crm.dto.CompanyDTO;
 import mg.ando.erpnext.crm.service.ErpRestService;
 
@@ -33,7 +34,7 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public CompanyDTO getCompanyByName(String name) {
         String endpoint = COMPANY_ENDPOINT + "/" + name;
-        return erpRestService.callErpApi(
+        return erpRestService.callApi(
             endpoint,
             HttpMethod.GET,
             null,
@@ -44,14 +45,15 @@ public class CompanyServiceImpl implements CompanyService {
 
     @Override
     public List<CompanyDTO> getAllCompanies() {
-        CompanyDTO[] result = erpRestService.callErpApiWithFieldAndFilter(
+        CompanyDTO[] result = erpRestService.callApiWithFilters(
             COMPANY_ENDPOINT,
             HttpMethod.GET,
             null,
             null,
             DEFAULT_FIELDS,
             null,
-            CompanyDTO[].class
+            CompanyDTO[].class,
+            "limit_page_length=10000"
         );
         
         return result != null ? Arrays.asList(result) : Collections.emptyList();
@@ -60,7 +62,7 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public void createCompany(CompanyDTO companyDTO) {
      
-        erpRestService.callErpApi(
+        erpRestService.callApi(
             COMPANY_ENDPOINT,
             HttpMethod.POST,
             companyDTO,
@@ -90,7 +92,7 @@ public class CompanyServiceImpl implements CompanyService {
         requestBody.put("docs", docs);
 
         try {
-            Map<String, Object> response = erpRestService.callErpApi(
+            Map<String, Object> response = erpRestService.callApi(
                 "/api/method/frappe.client.insert_many",
                 HttpMethod.POST,
                 requestBody,
@@ -112,7 +114,7 @@ public class CompanyServiceImpl implements CompanyService {
     @Override
     public void deleteCompany(String name) {
         String endpoint = COMPANY_ENDPOINT + "/" + name;
-        erpRestService.callErpApi(
+        erpRestService.callApi(
             endpoint,
             HttpMethod.DELETE,
             null,
@@ -137,5 +139,21 @@ public class CompanyServiceImpl implements CompanyService {
             }
         }
         return count;
+    }
+    
+    @Override
+    public List<CompanyDTO> getWithFilters(List<Filter> filters) {
+        CompanyDTO[] result = erpRestService.callApiWithFilters(
+            COMPANY_ENDPOINT,
+            HttpMethod.GET,
+            null,
+            null,
+            DEFAULT_FIELDS,
+            filters,
+            CompanyDTO[].class,
+            "limit_page_length=10000" 
+        );
+
+        return result != null ? Arrays.asList(result) : Collections.emptyList();
     }
 }

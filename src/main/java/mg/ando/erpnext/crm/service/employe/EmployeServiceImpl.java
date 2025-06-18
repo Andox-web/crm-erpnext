@@ -45,7 +45,7 @@ public class EmployeServiceImpl implements EmployeService {
         HttpHeaders headers = null;
         String endpoint = EMPLOYEE_ENDPOINT + "/" + name;
 
-        return erpRestService.callErpApi(
+        return erpRestService.callApi(
             endpoint,
             HttpMethod.GET,
             null,
@@ -88,14 +88,15 @@ public class EmployeServiceImpl implements EmployeService {
         }
 
         // Appeler la méthode avec champs et filtres
-        EmployeDTO[] result = erpRestService.callErpApiWithFieldAndFilter(
+        EmployeDTO[] result = erpRestService.callApiWithFilters(
             EMPLOYEE_ENDPOINT,
             HttpMethod.GET,
             null,
             headers,
             DEFAULT_FIELDS,
             filters,
-            EmployeDTO[].class
+            EmployeDTO[].class,
+            "limit_page_length=10000"
         );
         
         return result != null ? List.of(result) : Collections.emptyList();
@@ -106,14 +107,15 @@ public class EmployeServiceImpl implements EmployeService {
         HttpHeaders headers = null;
         
         // Appeler la méthode avec champs par défaut
-        EmployeDTO[] result = erpRestService.callErpApiWithFieldAndFilter(
+        EmployeDTO[] result = erpRestService.callApiWithFilters(
             EMPLOYEE_ENDPOINT,
             HttpMethod.GET,
             null,
             headers,
             DEFAULT_FIELDS,
             null, // pas de filtres
-            EmployeDTO[].class
+            EmployeDTO[].class,
+            "limit_page_length=10000"
         );
         
         return result != null ? List.of(result) : Collections.emptyList();
@@ -148,7 +150,7 @@ public class EmployeServiceImpl implements EmployeService {
 
         try {
             // Appel de l'API frappe.client.insert_many
-            Map<String, Object> response = erpRestService.callErpApi(
+            Map<String, Object> response = erpRestService.callApi(
                 "/api/method/frappe.client.insert_many",
                 HttpMethod.POST,
                 requestBody,
@@ -174,7 +176,7 @@ public class EmployeServiceImpl implements EmployeService {
     @Override
     public void createEmploye(EmployeDTO employeDTO) {
         HttpHeaders headers = null;
-        erpRestService.callErpApi(
+        erpRestService.callApi(
             EMPLOYEE_ENDPOINT,
             HttpMethod.POST,
             employeDTO,
@@ -208,12 +210,30 @@ public class EmployeServiceImpl implements EmployeService {
         HttpHeaders headers = null;
         String endpoint = EMPLOYEE_ENDPOINT + "/" + name;
 
-        erpRestService.callErpApi(
+        erpRestService.callApi(
             endpoint,
             HttpMethod.DELETE,
             null,
             headers,
             Object.class
         );
+    }
+    @Override
+    public List<EmployeDTO> getWithFilters(List<Filter> filters) {
+        HttpHeaders headers = null;
+
+        // Appeler la méthode avec champs par défaut et les filtres
+        EmployeDTO[] result = erpRestService.callApiWithFilters(
+            EMPLOYEE_ENDPOINT,
+            HttpMethod.GET,
+            null,
+            headers,
+            DEFAULT_FIELDS,
+            filters,
+            EmployeDTO[].class,
+            "limit_page_length=10000"
+        );
+
+        return result != null ? List.of(result) : Collections.emptyList();
     }
 }

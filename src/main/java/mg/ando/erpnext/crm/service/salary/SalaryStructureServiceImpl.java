@@ -10,6 +10,7 @@ import java.util.Map;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 
+import mg.ando.erpnext.crm.config.Filter;
 import mg.ando.erpnext.crm.dto.SalaryDetailDTO;
 import mg.ando.erpnext.crm.dto.SalaryStructureDTO;
 import mg.ando.erpnext.crm.service.ErpRestService;
@@ -34,7 +35,7 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
     @Override
     public SalaryStructureDTO getSalaryStructureByName(String name) {
         String endpoint = SALARY_STRUCTURE_ENDPOINT + "/" + name;
-        return erpRestService.callErpApi(
+        return erpRestService.callApi(
             endpoint,
             HttpMethod.GET,
             null,
@@ -45,14 +46,15 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
 
     @Override
     public List<SalaryStructureDTO> getAllSalaryStructures() {
-        SalaryStructureDTO[] result = erpRestService.callErpApiWithFieldAndFilter(
+        SalaryStructureDTO[] result = erpRestService.callApiWithFilters(
             SALARY_STRUCTURE_ENDPOINT,
             HttpMethod.GET,
             null,
             null,
             DEFAULT_FIELDS,
             null,
-            SalaryStructureDTO[].class
+            SalaryStructureDTO[].class,
+            "limit_page_length=10000"
         );
         
         return result != null ? Arrays.asList(result) : Collections.emptyList();
@@ -62,7 +64,7 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
     public void createSalaryStructure(SalaryStructureDTO salaryStructureDTO) {
         Map<String, Object> requestBody = buildSalaryStructureBody(salaryStructureDTO);
         
-        erpRestService.callErpApi(
+        erpRestService.callApi(
             SALARY_STRUCTURE_ENDPOINT,
             HttpMethod.POST,
             requestBody,
@@ -92,7 +94,7 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
     @Override
     public void deleteSalaryStructure(String name) {
         String endpoint = SALARY_STRUCTURE_ENDPOINT + "/" + name;
-        erpRestService.callErpApi(
+        erpRestService.callApi(
             endpoint,
             HttpMethod.DELETE,
             null,
@@ -148,5 +150,20 @@ public class SalaryStructureServiceImpl implements SalaryStructureService {
         doc.put("deductions", deductionsList);
         
         return doc;
+    }
+
+    @Override
+    public List<SalaryStructureDTO> getWithFilters(List<Filter> filters) {
+        SalaryStructureDTO[] result = erpRestService.callApiWithFilters(
+            SALARY_STRUCTURE_ENDPOINT,
+            HttpMethod.GET,
+            null,
+            null,
+            DEFAULT_FIELDS,
+            filters,
+            SalaryStructureDTO[].class
+        );
+        
+        return result != null ? Arrays.asList(result) : Collections.emptyList();
     }
 }

@@ -1,9 +1,15 @@
 package mg.ando.erpnext.crm.service.salary;
 
+import mg.ando.erpnext.crm.config.Filter;
 import mg.ando.erpnext.crm.dto.SalaryAssignmentDTO;
 import mg.ando.erpnext.crm.service.ErpRestService;
+import mg.ando.erpnext.crm.service.ErpRestService.ApiOptions;
+
+import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
+
+import com.fasterxml.jackson.core.type.TypeReference;
 
 import java.util.*;
 
@@ -23,10 +29,7 @@ public class SalaryAssignmentServiceImpl implements SalaryAssignmentService {
         "base",
         "variable",
         "from_date",
-        "to_date",
-        "currency",
-        "payroll_frequency",
-        "taxable_income"
+        "currency"
     };
 
     public SalaryAssignmentServiceImpl(ErpRestService erpRestService) {
@@ -36,7 +39,7 @@ public class SalaryAssignmentServiceImpl implements SalaryAssignmentService {
     @Override
     public SalaryAssignmentDTO getByName(String name) {
         String endpoint = ENDPOINT + "/" + name;
-        return erpRestService.callErpApi(
+        return erpRestService.callApi(
             endpoint,
             HttpMethod.GET,
             null,
@@ -47,33 +50,34 @@ public class SalaryAssignmentServiceImpl implements SalaryAssignmentService {
 
     @Override
     public List<SalaryAssignmentDTO> getAll() {
-        SalaryAssignmentDTO[] result = erpRestService.callErpApiWithFieldAndFilter(
+        SalaryAssignmentDTO[] result = erpRestService.callApiWithFilters(
             ENDPOINT,
             HttpMethod.GET,
             null,
             null,
             DEFAULT_FIELDS,
             null,
-            SalaryAssignmentDTO[].class
+            SalaryAssignmentDTO[].class,
+            "limit_page_length=10000"
         );
         
         return result != null ? Arrays.asList(result) : Collections.emptyList();
     }
 
     @Override
-    public void create(SalaryAssignmentDTO dto) {
-        erpRestService.callErpApi(
+    public SalaryAssignmentDTO create(SalaryAssignmentDTO dto) {
+        return erpRestService.callApi(
             ENDPOINT,
             HttpMethod.POST,
             dto,
             null,
-            Object.class
+            SalaryAssignmentDTO.class
         );
     }
 
     @Override
-    public int createAll(List<SalaryAssignmentDTO> dtos) {
-        if (dtos == null || dtos.isEmpty()) return 0;
+    public List<SalaryAssignmentDTO> createAll(List<SalaryAssignmentDTO> dtos) {
+        if (dtos == null || dtos.isEmpty()) return new ArrayList<>();
 
         List<Map<String, Object>> docs = new ArrayList<>();
         for (SalaryAssignmentDTO dto : dtos) {
@@ -97,27 +101,36 @@ public class SalaryAssignmentServiceImpl implements SalaryAssignmentService {
         requestBody.put("docs", docs);
 
         try {
-            Map<String, Object> response = erpRestService.callErpApi(
+            TypeReference<List<String>> typeRef = new TypeReference<>() {};
+            List<String> result = erpRestService.callApi(
                 "/api/method/frappe.client.insert_many",
                 HttpMethod.POST,
                 requestBody,
                 null,
-                Map.class
+                typeRef,
+                ErpRestService.ApiOptions.builder().dataPath("message").build()
             );
 
-            if (response != null && response.containsKey("message")) {
-                return ((List<?>) response.get("message")).size();
+            if (result != null) {
+                // Tu peux ensuite récupérer chaque SalaryAssignmentDTO par son nom
+                List<SalaryAssignmentDTO> created = new ArrayList<>();
+                for (String name : result) {
+                    created.add(getByName(name)); // appel à l'ERP pour charger le doc complet
+                }
+                return created;
             }
+
         } catch (Exception e) {
             throw new RuntimeException("Erreur création en masse des assignments", e);
         }
-        return 0;
+        throw new RuntimeException("Erreur création en masse des assignments");
+        
     }
 
     @Override
     public void delete(String name) {
         String endpoint = ENDPOINT + "/" + name;
-        erpRestService.callErpApi(
+        erpRestService.callApi(
             endpoint,
             HttpMethod.DELETE,
             null,
@@ -140,5 +153,50 @@ public class SalaryAssignmentServiceImpl implements SalaryAssignmentService {
             }
         }
         return count;
+    }
+
+    @Override
+    public boolean cancel(SalaryAssignmentDTO salaryAssignmentDTO) {
+        try {
+            erpRestService.callApiWithResponse(ENDPOINT+"/"+salaryAssignmentDTO.getName()
+            , HttpMethod.POST, 
+             null,
+             null,
+              Void.class, "run_method=cancel");
+              return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public boolean submit(SalaryAssignmentDTO salaryAssignmentDTO) {
+        try {
+            erpRestService.callApiWithResponse(ENDPOINT+"/"+salaryAssignmentDTO.getName()
+            , HttpMethod.POST, 
+             null,
+             null,
+              Void.class, "run_method=submit");
+              return true;
+        } catch (Exception e) {
+            e.printStackTrace();
+            return false;
+        }
+    }
+
+    @Override
+    public List<SalaryAssignmentDTO> getWithFilters(List<Filter> filters) {
+        SalaryAssignmentDTO[] result = erpRestService.callApiWithFilters(
+            ENDPOINT,
+            HttpMethod.GET,
+            null,
+            null,
+            DEFAULT_FIELDS,
+            filters,
+            SalaryAssignmentDTO[].class,
+            "limit_page_length=10000"
+        );
+        return result != null ? Arrays.asList(result) : Collections.emptyList();
     }
 }

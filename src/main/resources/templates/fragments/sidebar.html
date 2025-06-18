@@ -9,6 +9,22 @@
             <nav class="sidebar-nav">
                 <ul class="nav flex-column">
                     <li class="nav-item">
+                        <a class="nav-link" href="#" data-bs-toggle="collapse" data-bs-target="#salaryMenu">
+                            <span class="nav-icon"><i class="fas fa-file-invoice-dollar"></i></span>
+                            <span class="nav-text">Salary Slips</span>
+                            <span class="ms-auto"><i class="fas fa-chevron-up"></i></span>
+                        </a>
+                        <div id="salaryMenu" class="submenu collapse">
+                            <a class="nav-link" href="/insertSalarySlip">
+                                <span class="nav-text">Insert Salary Slip</span>
+                            </a>
+                            <a class="nav-link" href="/modifySalarySlipWithCondition">
+                                <span class="nav-text">Modify Salary Slip With Condition</span>
+                            </a>
+                        </div>
+                    </li>
+                    
+                    <li class="nav-item">
                         <a class="nav-link" href="/dashboard">
                             <span class="nav-icon"><i class="fas fa-tachometer-alt"></i></span>
                             <span class="nav-text">Tableau de bord</span>

@@ -33,7 +33,7 @@ public class DepartementServiceImpl implements DepartementService {
         HttpHeaders headers = null;
         String endpoint = DEPARTMENT_ENDPOINT + "/" + name;
 
-        return erpRestService.callErpApi(
+        return erpRestService.callApi(
             endpoint,
             HttpMethod.GET,
             null,
@@ -47,14 +47,15 @@ public class DepartementServiceImpl implements DepartementService {
         HttpHeaders headers = null;
         
         // Appeler la méthode avec champs par défaut
-        DepartementDTO[] result = erpRestService.callErpApiWithFieldAndFilter(
+        DepartementDTO[] result = erpRestService.callApiWithFilters(
             DEPARTMENT_ENDPOINT,
             HttpMethod.GET,
             null,
             headers,
             DEFAULT_FIELDS,
             null, // pas de filtres
-            DepartementDTO[].class
+            DepartementDTO[].class,
+            "limit_page_length=10000"
         );
         
         return result != null ? List.of(result) : Collections.emptyList();

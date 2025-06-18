@@ -1,5 +1,6 @@
 package mg.ando.erpnext.crm.service.salary;
 
+import mg.ando.erpnext.crm.config.Filter;
 import mg.ando.erpnext.crm.dto.SalaryStructureDTO;
 import java.util.List;
 
@@ -10,4 +11,5 @@ public interface SalaryStructureService {
     int createAllSalaryStructures(List<SalaryStructureDTO> structures);
     void deleteSalaryStructure(String name);
     int deleteAllSalaryStructures(List<String> names);
+    List<SalaryStructureDTO> getWithFilters(List<Filter> filters);
 }
