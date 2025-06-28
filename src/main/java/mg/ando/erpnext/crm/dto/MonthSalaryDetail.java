@@ -8,7 +8,6 @@ import lombok.Data;
 public class MonthSalaryDetail {
     
     private YearMonth yearMonth;
-
     private String salaryComponent;
 
     private Double amount;

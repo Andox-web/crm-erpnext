@@ -7,9 +7,10 @@ import java.util.List;
 
 public interface CompanyService {
     CompanyDTO getCompanyByName(String name);
+    CompanyDTO getByName(String name);
     List<CompanyDTO> getAllCompanies();
-    void createCompany(CompanyDTO companyDTO);
-    int createAllCompanies(List<CompanyDTO> companyDTOs);
+    CompanyDTO createCompany(CompanyDTO companyDTO);
+    List<CompanyDTO> createAllCompanies(List<CompanyDTO> companyDTOs);
     void deleteCompany(String name);
     int deleteAllCompanies(List<String> companyNames);
     List<CompanyDTO> getWithFilters(List<Filter> filters);

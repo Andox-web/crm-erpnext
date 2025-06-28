@@ -1,18 +1,16 @@
 package mg.ando.erpnext.crm.service.employe;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import mg.ando.erpnext.crm.config.Filter;
 import mg.ando.erpnext.crm.dto.CompanyDTO;
 import mg.ando.erpnext.crm.service.ErpRestService;
+import mg.ando.erpnext.crm.service.ErpRestService.ApiOptions;
 
 @Service
 public class CompanyServiceImpl implements CompanyService {
@@ -20,11 +18,10 @@ public class CompanyServiceImpl implements CompanyService {
     private final ErpRestService erpRestService;
     private static final String COMPANY_ENDPOINT = "/api/resource/Company";
 
-    // Liste des champs à récupérer par défaut
     private static final String[] DEFAULT_FIELDS = {
         "name",
         "company_name",
-        "default_currency",
+        "default_currency"
     };
 
     public CompanyServiceImpl(ErpRestService erpRestService) {
@@ -33,6 +30,10 @@ public class CompanyServiceImpl implements CompanyService {
 
     @Override
     public CompanyDTO getCompanyByName(String name) {
+        return getByName(name);
+    }
+
+    public CompanyDTO getByName(String name) {
         String endpoint = COMPANY_ENDPOINT + "/" + name;
         return erpRestService.callApi(
             endpoint,
@@ -55,60 +56,58 @@ public class CompanyServiceImpl implements CompanyService {
             CompanyDTO[].class,
             "limit_page_length=10000"
         );
-        
+
         return result != null ? Arrays.asList(result) : Collections.emptyList();
     }
 
     @Override
-    public void createCompany(CompanyDTO companyDTO) {
-     
-        erpRestService.callApi(
+    public CompanyDTO createCompany(CompanyDTO dto) {
+        Map<String, Object> requestBody = buildCompanyBody(dto);
+        return erpRestService.callApi(
             COMPANY_ENDPOINT,
             HttpMethod.POST,
-            companyDTO,
+            requestBody,
             null,
-            Object.class
+            CompanyDTO.class
         );
     }
 
     @Override
-    public int createAllCompanies(List<CompanyDTO> companyDTOs) {
-        if (companyDTOs == null || companyDTOs.isEmpty()) {
-            return 0;
-        }
+    public List<CompanyDTO> createAllCompanies(List<CompanyDTO> companyDTOs) {
+        if (companyDTOs == null || companyDTOs.isEmpty()) return new ArrayList<>();
 
         List<Map<String, Object>> docs = new ArrayList<>();
         for (CompanyDTO dto : companyDTOs) {
-            Map<String, Object> companyMap = new HashMap<>();
-            companyMap.put("doctype", "Company");
-            companyMap.put("name", dto.getName());
-            companyMap.put("company_name", dto.getCompanyName());
-            companyMap.put("default_currency", dto.getDefaultCurrency());
-            
-            docs.add(companyMap);
+            docs.add(buildCompanyBody(dto));
         }
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("docs", docs);
 
         try {
-            Map<String, Object> response = erpRestService.callApi(
+            TypeReference<List<String>> typeRef = new TypeReference<>() {};
+            List<String> result = erpRestService.callApi(
                 "/api/method/frappe.client.insert_many",
                 HttpMethod.POST,
                 requestBody,
                 null,
-                Map.class
+                typeRef,
+                ApiOptions.builder().dataPath("message").build()
             );
 
-            if (response != null && response.containsKey("message")) {
-                List<?> resultList = (List<?>) response.get("message");
-                return resultList.size();
+            if (result != null) {
+                List<CompanyDTO> created = new ArrayList<>();
+                for (String name : result) {
+                    created.add(getByName(name));
+                }
+                return created;
             }
+
         } catch (Exception e) {
-            System.err.println("Erreur création en masse des sociétés : " + e.getMessage());
+            throw new RuntimeException("Erreur création en masse des sociétés", e);
         }
 
-        throw new RuntimeException("Erreur lors de la création en masse des sociétés");
+        throw new RuntimeException("Erreur création en masse des sociétés");
     }
 
     @Override
@@ -125,9 +124,7 @@ public class CompanyServiceImpl implements CompanyService {
 
     @Override
     public int deleteAllCompanies(List<String> companyNames) {
-        if (companyNames == null || companyNames.isEmpty()) {
-            return 0;
-        }
+        if (companyNames == null || companyNames.isEmpty()) return 0;
 
         int count = 0;
         for (String name : companyNames) {
@@ -140,7 +137,7 @@ public class CompanyServiceImpl implements CompanyService {
         }
         return count;
     }
-    
+
     @Override
     public List<CompanyDTO> getWithFilters(List<Filter> filters) {
         CompanyDTO[] result = erpRestService.callApiWithFilters(
@@ -151,9 +148,18 @@ public class CompanyServiceImpl implements CompanyService {
             DEFAULT_FIELDS,
             filters,
             CompanyDTO[].class,
-            "limit_page_length=10000" 
+            "limit_page_length=10000"
         );
 
         return result != null ? Arrays.asList(result) : Collections.emptyList();
+    }
+
+    private Map<String, Object> buildCompanyBody(CompanyDTO dto) {
+        Map<String, Object> doc = new HashMap<>();
+        doc.put("doctype", "Company");
+        doc.put("name", dto.getName());
+        doc.put("company_name", dto.getCompanyName());
+        doc.put("default_currency", dto.getDefaultCurrency());
+        return doc;
     }
 }

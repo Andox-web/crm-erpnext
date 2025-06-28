@@ -8,11 +8,12 @@ import mg.ando.erpnext.crm.dto.EmployeDTO;
 
 public interface EmployeService {
     EmployeDTO getEmployeByName(String name);
+    EmployeDTO getByName(String name);
     List<EmployeDTO> rechercherEmployes(Map<String, String> filtre);
     List<EmployeDTO> getAllEmployes();
-    void createEmploye(EmployeDTO employeDTO);
+    EmployeDTO createEmploye(EmployeDTO employeDTO);
     void deleteEmploye(String name);
-    int createAllEmployes(List<EmployeDTO> employeDTOs);
+    List<EmployeDTO> createAllEmployes(List<EmployeDTO> employeDTOs);
     int deleteAllEmployes(List<String> employeNames);
     List<EmployeDTO> getWithFilters(List<Filter> filters);
 }

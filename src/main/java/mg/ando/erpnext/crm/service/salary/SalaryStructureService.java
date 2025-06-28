@@ -6,9 +6,10 @@ import java.util.List;
 
 public interface SalaryStructureService {
     SalaryStructureDTO getSalaryStructureByName(String name);
+    SalaryStructureDTO getByName(String name);
     List<SalaryStructureDTO> getAllSalaryStructures();
-    void createSalaryStructure(SalaryStructureDTO salaryStructureDTO);
-    int createAllSalaryStructures(List<SalaryStructureDTO> structures);
+    SalaryStructureDTO createSalaryStructure(SalaryStructureDTO salaryStructureDTO);
+    List<SalaryStructureDTO> createAllSalaryStructures(List<SalaryStructureDTO> structures);
     void deleteSalaryStructure(String name);
     int deleteAllSalaryStructures(List<String> names);
     List<SalaryStructureDTO> getWithFilters(List<Filter> filters);

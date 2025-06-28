@@ -1,26 +1,23 @@
 package mg.ando.erpnext.crm.service.salary;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+
 import mg.ando.erpnext.crm.config.Filter;
 import mg.ando.erpnext.crm.dto.SalaryComponentDTO;
 import mg.ando.erpnext.crm.service.ErpRestService;
+import mg.ando.erpnext.crm.service.ErpRestService.ApiOptions;
 
 @Service
 public class SalaryComponentServiceImpl implements SalaryComponentService {
 
     private final ErpRestService erpRestService;
-    private static final String SALARY_COMPONENT_ENDPOINT = "/api/resource/Salary Component";
+    private static final String ENDPOINT = "/api/resource/Salary Component";
 
-    // Champs par défaut pour les requêtes GET
     private static final String[] DEFAULT_FIELDS = {
         "name",
         "salary_component",
@@ -34,7 +31,11 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
 
     @Override
     public SalaryComponentDTO getSalaryComponentByName(String name) {
-        String endpoint = SALARY_COMPONENT_ENDPOINT + "/" + name;
+        return getByName(name);
+    }
+
+    public SalaryComponentDTO getByName(String name) {
+        String endpoint = ENDPOINT + "/" + name;
         return erpRestService.callApi(
             endpoint,
             HttpMethod.GET,
@@ -47,7 +48,7 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
     @Override
     public List<SalaryComponentDTO> getAllSalaryComponents() {
         SalaryComponentDTO[] result = erpRestService.callApiWithFilters(
-            SALARY_COMPONENT_ENDPOINT,
+            ENDPOINT,
             HttpMethod.GET,
             null,
             null,
@@ -56,65 +57,64 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
             SalaryComponentDTO[].class,
             "limit_page_length=10000"
         );
-        
+
         return result != null ? Arrays.asList(result) : Collections.emptyList();
     }
 
     @Override
-    public void createSalaryComponent(SalaryComponentDTO salaryComponentDTO) {
-        Map<String, Object> requestBody = buildSalaryComponentBody(salaryComponentDTO);
-        
-        erpRestService.callApi(
-            SALARY_COMPONENT_ENDPOINT,
+    public SalaryComponentDTO createSalaryComponent(SalaryComponentDTO dto) {
+        Map<String, Object> requestBody = buildSalaryComponentBody(dto);
+        return erpRestService.callApi(
+            ENDPOINT,
             HttpMethod.POST,
             requestBody,
             null,
-            Object.class
+            SalaryComponentDTO.class
         );
     }
 
     @Override
-    public int createAllSalaryComponents(List<SalaryComponentDTO> components) {
-        if (components == null || components.isEmpty()) {
-            return 0;
-        }
+    public List<SalaryComponentDTO> createAllSalaryComponents(List<SalaryComponentDTO> components) {
+        if (components == null || components.isEmpty()) return new ArrayList<>();
 
         List<Map<String, Object>> docs = new ArrayList<>();
         for (SalaryComponentDTO dto : components) {
-            Map<String, Object> componentMap = new HashMap<>();
-            componentMap.put("doctype", "Salary Component");
-            componentMap.put("salary_component", dto.getSalaryComponent());
-            componentMap.put("salary_component_abbr", dto.getAbbr());
-            componentMap.put("type", dto.getType());
-            docs.add(componentMap);
+            Map<String, Object> doc = buildSalaryComponentBody(dto);
+            docs.add(doc);
         }
 
         Map<String, Object> requestBody = new HashMap<>();
         requestBody.put("docs", docs);
 
         try {
-            Map<String, Object> response = erpRestService.callApi(
+            TypeReference<List<String>> typeRef = new TypeReference<>() {};
+            List<String> result = erpRestService.callApi(
                 "/api/method/frappe.client.insert_many",
                 HttpMethod.POST,
                 requestBody,
                 null,
-                Map.class
+                typeRef,
+                ApiOptions.builder().dataPath("message").build()
             );
 
-            if (response != null && response.containsKey("message")) {
-                List<?> resultList = (List<?>) response.get("message");
-                return resultList.size();
+            if (result != null) {
+                List<SalaryComponentDTO> created = new ArrayList<>();
+                for (String name : result) {
+                    created.add(getByName(name));
+                }
+                return created;
             }
+
         } catch (Exception e) {
-            System.err.println("Erreur création en masse des composants salariaux : " + e.getMessage());
+            throw new RuntimeException("Erreur création en masse des Salary Components", e);
         }
 
-        throw new RuntimeException("Erreur lors de la création en masse des composants salariaux");
+        throw new RuntimeException("Erreur création en masse des Salary Components");
     }
 
     @Override
     public void deleteSalaryComponent(String name) {
-        String endpoint = SALARY_COMPONENT_ENDPOINT + "/" + name;
+        String endpoint = ENDPOINT + "/" + name;
         erpRestService.callApi(
             endpoint,
             HttpMethod.DELETE,
@@ -126,9 +126,7 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
 
     @Override
     public int deleteAllSalaryComponents(List<String> names) {
-        if (names == null || names.isEmpty()) {
-            return 0;
-        }
+        if (names == null || names.isEmpty()) return 0;
 
         int count = 0;
         for (String name : names) {
@@ -136,18 +134,17 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
                 deleteSalaryComponent(name);
                 count++;
             } catch (Exception e) {
-                throw new RuntimeException("Erreur suppression composant salarial " + name, e);
+                throw new RuntimeException("Erreur suppression Salary Component " + name, e);
             }
         }
         return count;
     }
 
-    // Méthode utilitaire pour construire le corps de la requête
     private Map<String, Object> buildSalaryComponentBody(SalaryComponentDTO dto) {
         Map<String, Object> doc = new HashMap<>();
         doc.put("doctype", "Salary Component");
         doc.put("salary_component", dto.getSalaryComponent());
-        doc.put("abbr", dto.getAbbr());
+        doc.put("salary_component_abbr", dto.getAbbr());
         doc.put("type", dto.getType());
         return doc;
     }
@@ -155,7 +152,7 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
     @Override
     public List<SalaryComponentDTO> getWithFilters(List<Filter> filters) {
         SalaryComponentDTO[] result = erpRestService.callApiWithFilters(
-            SALARY_COMPONENT_ENDPOINT,
+            ENDPOINT,
             HttpMethod.GET,
             null,
             null,
@@ -164,6 +161,7 @@ public class SalaryComponentServiceImpl implements SalaryComponentService {
             SalaryComponentDTO[].class,
             "limit_page_length=10000"
         );
+
         return result != null ? Arrays.asList(result) : Collections.emptyList();
     }
 }

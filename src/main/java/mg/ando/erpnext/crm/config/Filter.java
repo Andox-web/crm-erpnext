@@ -1,8 +1,5 @@
 package mg.ando.erpnext.crm.config;
 
-import java.util.List;
-import java.util.stream.Collectors;
-
 import lombok.Data;
 
 @Data

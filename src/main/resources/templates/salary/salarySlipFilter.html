@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html layout:decorate="~{template}" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <title>Bulletins de Salaire</title>
+    <link rel="stylesheet" href="/css/salaries.css">
+</head>
+<body>
+    <div layout:fragment="content">
+        <div class="container-fluid py-4">
+            <div class="card shadow mb-4">
+                <div class="card-header bg-primary text-white py-3">
+                    <h5 class="mb-0">
+                        <i class="fas fa-file-invoice-dollar me-2"></i>Liste des Bulletins de Salaire
+                    </h5>
+                </div>
+                
+                <div class="card-body">
+                    <!-- Formulaire de filtre -->
+                    <form class="row g-3 mb-4" method="get">
+                        <div class="col-md-4">
+                            <select name="composant" class="form-select">
+                                <option value="">-- Composant --</option>
+                                <option th:each="comp : ${components}" th:value="${comp.salaryComponent}" th:text="${comp.salaryComponent}" >Composant</option>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <select name="operateur" class="form-select">
+                                <option value=">">&gt;</option>
+                                <option value="<">&lt;</option>
+                                <option value="=">=</option>
+                                <option value=">=">&ge;</option>
+                                <option value="<=">&le;</option>
+                            </select>
+                        </div>
+                        <div class="col-md-3">
+                            <input type="number" name="valeur" class="form-control" placeholder="Valeur" />
+                        </div>
+
+                        <div class="col-md-4 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary me-2">
+                                <i class="fas fa-filter me-1"></i> Filtrer
+                            </button>
+                            <a th:href="@{/salarySlipFilter}" class="btn btn-outline-secondary">
+                                <i class="fas fa-sync me-1"></i> Réinitialiser
+                            </a>
+                        </div>
+                    </form>
+
+                    <!-- Tableau des résultats -->
+                    <div class="table-responsive">
+                        <table class="table table-hover">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Employé</th>
+                                    <th>Date de début</th>
+                                    <th>Date de fin</th>
+                                    <th>Brut</th>
+                                    <th>Total Déduction</th>
+                                    <th>Net</th>
+                                    <th>PDF</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr th:each="slip : ${salarySlips}" th:class="${slip.status == 'Draft'} ? 'table-warning'">
+                                    <td th:text="${slip.name}"></td>
+                                    <td th:text="${slip.employeeName}"></td>
+                                    <td th:text="${slip.startDate}"></td>
+                                    <td th:text="${slip.endDate}"></td>
+                                    <td th:text="${slip.grossPay} + ' ' + ${slip.currency}"></td>
+                                    <td th:text="${slip.totalDeduction} + ' ' + ${slip.currency}"></td>
+                                    <td th:text="${slip.netPay} + ' ' + ${slip.currency}"></td>
+                                    <td>
+                                        <a th:href="@{/salaries/salaryslip/pdf?name={id}(id=${slip.name})}" 
+                                           class="btn btn-sm btn-danger">
+                                            <i class="fas fa-file-pdf"></i> PDF
+                                        </a>
+                                    </td>
+                                </tr>
+                                <tr th:if="${salarySlips.isEmpty()}">
+                                    <td colspan="8" class="text-center text-muted py-4">
+                                        Aucun bulletin trouvé pour cette période
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</body>
+</html>

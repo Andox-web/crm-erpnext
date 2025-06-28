@@ -1,17 +1,20 @@
 package mg.ando.erpnext.crm.service.salary;
 
-import mg.ando.erpnext.crm.config.Filter;
-import mg.ando.erpnext.crm.dto.SalaryAssignmentDTO;
-import mg.ando.erpnext.crm.service.ErpRestService;
-import mg.ando.erpnext.crm.service.ErpRestService.ApiOptions;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
 
-import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.HttpMethod;
 import org.springframework.stereotype.Service;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 
-import java.util.*;
+import mg.ando.erpnext.crm.config.Filter;
+import mg.ando.erpnext.crm.dto.SalaryAssignmentDTO;
+import mg.ando.erpnext.crm.service.ErpRestService;
 
 @Service
 public class SalaryAssignmentServiceImpl implements SalaryAssignmentService {
@@ -92,8 +95,6 @@ public class SalaryAssignmentServiceImpl implements SalaryAssignmentService {
             doc.put("from_date", dto.getFromDate());
             doc.put("to_date", dto.getToDate());
             doc.put("currency", dto.getCurrency());
-            doc.put("payroll_frequency", dto.getPayrollFrequency());
-            doc.put("taxable_income", dto.getTaxableIncome());
             docs.add(doc);
         }
 

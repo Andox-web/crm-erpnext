@@ -6,13 +6,13 @@ import java.util.List;
 import java.util.Map;
 
 import mg.ando.erpnext.crm.config.Filter;
-import mg.ando.erpnext.crm.dto.EmployeDTO;
 import mg.ando.erpnext.crm.dto.MonthSalaryDetail;
 import mg.ando.erpnext.crm.dto.MonthSalarySlip;
 import mg.ando.erpnext.crm.dto.SalarySlipDTO;
 
 public interface SalarySlipService {
     SalarySlipDTO getSalarySlipByName(String name);
+    SalarySlipDTO getByName(String name); 
     List<SalarySlipDTO> getAllSalarySlips();
     SalarySlipDTO createSalarySlip(SalarySlipDTO salarySlipDTO);
     List<SalarySlipDTO> createAllSalarySlips(List<SalarySlipDTO> salarySlipDTOs);
@@ -28,5 +28,5 @@ public interface SalarySlipService {
     Map<String,Map<YearMonth,MonthSalaryDetail>> groupSalaryDetailByMonthForYear(String year);
     List<MonthSalaryDetail> groupSalaryDetailByMonth(YearMonth yearMonth);
     MonthSalarySlip groupSalarySlipByMonth(YearMonth yearMonth);
-    void insertSalarySlipForEmployeInPeriod(String employeeName,LocalDate dateDebut,LocalDate dateFin,String SalaireBase);
+    void insertSalarySlipForEmployeInPeriod(String employeeName,LocalDate dateDebut,LocalDate dateFin,String SalaireBase,Boolean ecraser_value,Boolean use_meanBase);
 }

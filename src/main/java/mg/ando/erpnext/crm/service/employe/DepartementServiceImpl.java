@@ -43,6 +43,11 @@ public class DepartementServiceImpl implements DepartementService {
     }
 
     @Override
+    public DepartementDTO getByName(String name) {
+        return getDepartementByName(name);
+    }
+
+    @Override
     public List<DepartementDTO> getAllDepartements() {
         HttpHeaders headers = null;
         

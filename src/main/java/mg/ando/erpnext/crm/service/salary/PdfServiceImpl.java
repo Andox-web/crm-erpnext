@@ -47,7 +47,7 @@ public class PdfServiceImpl implements PdfService {
         Font boldFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, textColor);
         Font totalFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 10, primaryColor);
         Font summaryTotalFont = FontFactory.getFont(FontFactory.HELVETICA_BOLD, 12, primaryColor);
-        Font signatureFont = FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 9, new Color(100, 100, 100));
+        // Font signatureFont = FontFactory.getFont(FontFactory.HELVETICA_OBLIQUE, 9, new Color(100, 100, 100));
 
         // En-tête
         Paragraph header = new Paragraph("BULLETIN DE SALAIRE", headerFont);

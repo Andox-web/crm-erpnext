@@ -82,11 +82,13 @@
     <div layout:fragment="content">
         <div class="salary-form">
             <!-- Message d'état -->
-            <div th:if="${message}" class="alert-message" 
-                 th:style="${message.startsWith('Erreur')} ? 
-                 'background-color: var(--danger-color); color: var(--light-color)' : 
-                 'background-color: var(--success-color); color: var(--light-color)'">
-                [[${message}]]
+            <div th:if="${error}" class="alert-message"
+                 style="background-color: var(--danger-color); color: var(--light-color)">
+                [[${error}]]
+            </div>
+            <div th:if="${success}" class="alert-message"
+                 style="background-color: var(--success-color); color: var(--light-color)">
+                [[${success}]]
             </div>
             
             <!-- Carte du formulaire -->
@@ -111,6 +113,15 @@
                                 </div>
                             </div>
                             
+                            <div>
+                                <label for="use_meanBase" class="form-label"> Use Mean Base</label>
+                                <input type="checkbox" name="use_meanBase" id="use_meanBase" value="true">
+                            </div>
+
+                            <div>
+                                <label for="ecraser_value" class="form-label">Ecraser Value </label>
+                                <input type="checkbox" name="ecraser_value" id="ecraser_value" value="true">
+                            </div>
                             <!-- Salaire de base -->
                             <div>
                                 <label for="base" class="form-label">Salaire de base</label>

@@ -67,6 +67,12 @@ public class SalarySlipServiceImpl implements SalarySlipService {
             SalarySlipDTO.class
         );
     }
+
+    @Override
+    public SalarySlipDTO getByName(String name) {
+        return getSalarySlipByName(name);
+    }
+
     @Override
     public List<SalarySlipDTO> getSalarySlipsByEmployee(String employeeName) {
         HttpHeaders headers = null;
@@ -431,11 +437,12 @@ public class SalarySlipServiceImpl implements SalarySlipService {
      } ;
     @Override
     public void insertSalarySlipForEmployeInPeriod(String employeeName, LocalDate dateDebut, LocalDate dateFin,
-            String SalaireBase) {
+            String SalaireBase,Boolean ecraser_value,Boolean use_meanBase) {
         if (dateDebut.isAfter(dateFin)) {
             throw new RuntimeException("debut > fin");
         }
         Double base;
+        
         List<Filter> filters = new ArrayList<>();
         filters.add(new Filter("from_date", "<=", dateDebut.toString()));
         filters.add(new Filter("employee", "=",employeeName));
@@ -451,30 +458,47 @@ public class SalarySlipServiceImpl implements SalarySlipService {
             "limit_page_length=10000"
         );
 
-        if (result.length<=0) {
-            throw new RuntimeException("l'employee "+employeeName +"n a aucun salary slip avant les dates donnee");
-        }
-        SalaryAssignmentDTO baseSalaryAssign = result[0];
-        LocalDate baseCurrentDate = LocalDate.parse(baseSalaryAssign.getFromDate(),DateTimeFormatter.ISO_DATE);
-        if (result.length > 1) {
-            for (int i = 1; i < result.length; i++) {
-                SalaryAssignmentDTO currentSalarySlip = result[i];
-                LocalDate currentstartDate = LocalDate.parse(currentSalarySlip.getFromDate(),DateTimeFormatter.ISO_DATE);
-                if(currentstartDate.isAfter(baseCurrentDate)){
-                    baseCurrentDate = currentstartDate;
-                    baseSalaryAssign = currentSalarySlip;
+        
+        String structure;
+        if (use_meanBase!=null || (result.length<=0 && (SalaireBase==null || SalaireBase.isEmpty()))) {
+            List<SalaryAssignmentDTO> allAssignmentDTOs =  salaryAssignmentService.getAll();
+            if (allAssignmentDTOs.isEmpty()) {
+                throw new RuntimeException("aucun assignnment de salaire present dans la base");
+            }
+            structure = allAssignmentDTOs.get(0).getSalaryStructure();
+            double total = 0;
+            for (SalaryAssignmentDTO salaryAssignmentDTO : allAssignmentDTOs) {
+                total+=salaryAssignmentDTO.getBase();
+            }
+            base=total/allAssignmentDTOs.size();
+        }else{
+            SalaryAssignmentDTO baseSalaryAssign = result[0];
+            LocalDate baseCurrentDate = LocalDate.parse(baseSalaryAssign.getFromDate(),DateTimeFormatter.ISO_DATE);
+            if (result.length > 1) {
+                for (int i = 1; i < result.length; i++) {
+                    SalaryAssignmentDTO currentSalarySlip = result[i];
+                    LocalDate currentstartDate = LocalDate.parse(currentSalarySlip.getFromDate(),DateTimeFormatter.ISO_DATE);
+                    if(currentstartDate.isAfter(baseCurrentDate)){
+                        baseCurrentDate = currentstartDate;
+                        baseSalaryAssign = currentSalarySlip;
+                    }
                 }
             }
+            structure = baseSalaryAssign.getSalaryStructure();
+            if (SalaireBase==null || SalaireBase.isEmpty()) {
+                base = baseSalaryAssign.getBase();
+            } else base = Double.parseDouble(SalaireBase);
         }
-        String structure = baseSalaryAssign.getSalaryStructure();
-        if (SalaireBase==null || SalaireBase.isEmpty()) {
-            base = baseSalaryAssign.getBase();
-        } else base = Double.parseDouble(SalaireBase);
         
+        YearMonth  currentYearMonth =  YearMonth.of(dateDebut.getYear(), dateDebut.getMonthValue());
+        YearMonth endYearMonth = YearMonth.of(dateFin.getYear(), dateFin.getMonthValue());
+        
+
         Set<YearMonth> usedYearMonth = new HashSet<>() ;
         List<Filter> filterSlip = new ArrayList<>();
-        filterSlip.add(new Filter("end_date", "<=", dateFin.toString()));
-        filterSlip.add(new Filter("start_date", ">=",dateDebut.toString()));
+        
+        filterSlip.add(new Filter("end_date", "<=", endYearMonth.atEndOfMonth().toString()));
+        filterSlip.add(new Filter("start_date", ">=",currentYearMonth.atDay(1).toString()));
         filterSlip.add(new Filter("employee", "=",employeeName));
 
         SalarySlipDTO[] slipIn = erpRestService.callApiWithFilters(
@@ -487,18 +511,31 @@ public class SalarySlipServiceImpl implements SalarySlipService {
             SalarySlipDTO[].class,
             "limit_page_length=10000"
         );
-
-        for (int index = 0; index < slipIn.length; index++) {
-            LocalDate date = LocalDate.parse(slipIn[index].getStartDate(),DateTimeFormatter.ISO_DATE);
-            usedYearMonth.add(YearMonth.of(date.getYear(), date.getMonthValue())) ;      
+        if (ecraser_value !=null) {
+            filterSlip = new ArrayList<>();
+            filterSlip.add(new Filter("from_date", "<=", endYearMonth.atEndOfMonth().toString()));
+            filterSlip.add(new Filter("from_date", ">=",currentYearMonth.atDay(1).toString()));
+            filterSlip.add(new Filter("employee", "=",employeeName));
+            List<SalaryAssignmentDTO> usedSalaryAssignmentDTOs = salaryAssignmentService.getWithFilters(filterSlip);
+            for (SalaryAssignmentDTO assignment : usedSalaryAssignmentDTOs) {
+                salaryAssignmentService.cancel(assignment);
+                salaryAssignmentService.delete(assignment.getName());
+            }
+            for (SalarySlipDTO slip : slipIn) {
+                cancel(slip);
+                deleteSalarySlip(slip.getName());
+            }
+        }else{
+            for (int index = 0; index < slipIn.length; index++) {
+                LocalDate date = LocalDate.parse(slipIn[index].getStartDate(),DateTimeFormatter.ISO_DATE);
+                usedYearMonth.add(YearMonth.of(date.getYear(), date.getMonthValue())) ;      
+            }
         }
-        YearMonth  currentYearMonth =  YearMonth.of(dateDebut.getYear(), dateDebut.getMonthValue());
-        YearMonth endYearMonth = YearMonth.of(dateFin.getYear(), dateFin.getMonthValue());
+
         
         List<SalaryAssignmentDTO> lSalaryAssignmentDTOs =  new ArrayList<>();
         List<SalarySlipDTO> lSalarySlipDTOs = new ArrayList<>();
         while (currentYearMonth.isBefore(endYearMonth) || currentYearMonth.equals(endYearMonth)) {
-            System.out.println(currentYearMonth);
             if(!usedYearMonth.contains(currentYearMonth)){
                 SalaryAssignmentDTO salaryAssignmentDTO = new SalaryAssignmentDTO();
                 salaryAssignmentDTO.setBase(base);
@@ -533,11 +570,11 @@ public class SalarySlipServiceImpl implements SalarySlipService {
     @Override
     public boolean cancel(SalarySlipDTO salarySlipDTO) {
         try {
-             erpRestService.callApiWithResponse(SALARY_SLIP_ENDPOINT+"/"+salarySlipDTO.getName()
-            , HttpMethod.POST, 
-             null,
-             null,
-              Void.class, "run_method=cancel");
+            erpRestService.callApiWithResponse(SALARY_SLIP_ENDPOINT+"/"+salarySlipDTO.getName()
+                , HttpMethod.POST, 
+                null,
+                null,
+                Void.class, "run_method=cancel");
               return true;
         } catch (Exception e) {
             e.printStackTrace();

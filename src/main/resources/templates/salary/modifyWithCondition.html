@@ -22,7 +22,7 @@
             font-weight: bold;
         }
 
-        select, input[type="number"] {
+        select, input{
             border-radius: var(--border-radius);
         }
 
@@ -43,6 +43,20 @@
             color: white;
             border-radius: var(--border-radius);
         }
+        .percentage-label {
+            position: relative;
+            border-radius:  0 var(--border-radius) var(--border-radius) 0  !important;
+        }
+
+        .percentage-label::after {
+            content: "%";
+            position: absolute;
+            right: 20px;
+            top: 50%;
+            transform: translateY(-50%);
+            color: #777;
+            font-size: 1rem;
+        }
     </style>
 </head>
 <body>
@@ -50,27 +64,37 @@
     <div class="container">
         <div class="form-wrapper">
             <h2>Définir les critères</h2>
-            <div th:if="${message}" class="alert-message" 
-                 th:style="${message.startsWith('Erreur')} ? 
-                 'background-color: var(--danger-color); color: var(--light-color)' : 
-                 'background-color: var(--success-color); color: var(--light-color)'">
-                [[${message}]]
+            <div th:if="${error}" class="alert-message"
+                 style="background-color: var(--danger-color); color: var(--light-color)">
+                [[${error}]]
+            </div>
+            <div th:if="${success}" class="alert-message"
+                 style="background-color: var(--success-color); color: var(--light-color)">
+                [[${success}]]
             </div>
             <form method="post">
-                <!-- Select multiple employés -->
+                <!-- Select multiple employés
                 <div class="mb-3">
                     <label for="employes" class="form-label">Employés</label>
                     <select id="employes" name="employes" class="form-select" multiple>
                         <option th:each="emp : ${employes}" th:value="${emp.name}" th:text="${emp.employeeName}">Nom Employé</option>
                     </select>
-                </div>
+                </div> -->
 
                 <!-- Input base -->
-                <div class="mb-3">
-                    <label for="base" class="form-label">Base</label>
-                    <input type="number" id="base" name="base" class="form-control" />
+                <div class="form-group">
+                    <label for="base">Base (en %)</label>
+                    <div class="input-group">
+                        <select id="sign" class="form-select" name="sign">
+                            <option value="1">+</option>
+                            <option value="-1">-</option>
+                        </select>
+                        <div class="percentage-label" style="flex: 1; position: relative;">
+                            <input type="number" id="base" name="base" class="form-control" step="0.1" value="1" />
+                        </div>
+                    </div>
                 </div>
-
+                
                 <!-- Groupe dynamique -->
                 <div id="groupe-conditions">
                     <div class="row g-2 mb-2 condition-group">

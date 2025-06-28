@@ -2,7 +2,6 @@ package mg.ando.erpnext.crm.controller.salary;
 
 import java.time.LocalDate;
 
-import org.springframework.cglib.core.Local;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -35,18 +34,18 @@ public class SalarySlipInsertControlleur {
     public String insertSalarySlip(
             @RequestParam("employee_name") String employeName,
             @RequestParam("base") String base,
+            @RequestParam( value = "ecraser_value", required = false) Boolean ecraser_value,
+            @RequestParam(value = "use_meanBase", required = false) Boolean use_meanBase,
             @RequestParam("dateDebut") String dateDebut,
             @RequestParam("dateFin") String dateFin,
             RedirectAttributes redirectAttributes
         ){
-            System.out.println(employeName);
-            System.out.println(dateDebut);
             try {
-                salarySlipService.insertSalarySlipForEmployeInPeriod(employeName, LocalDate.parse(dateDebut), LocalDate.parse(dateFin), base);
-                redirectAttributes.addFlashAttribute("message","insert fini avec succee");         
+                salarySlipService.insertSalarySlipForEmployeInPeriod(employeName, LocalDate.parse(dateDebut), LocalDate.parse(dateFin), base,ecraser_value,use_meanBase);
+                redirectAttributes.addFlashAttribute("success","insert fini avec succee");         
             } catch (Exception e) {
                 // TODO: handle exception
-                redirectAttributes.addFlashAttribute("message",e.getMessage());
+                redirectAttributes.addFlashAttribute("error",e.getMessage());
                 e.printStackTrace();
             }
         return "redirect:/insertSalarySlip";
